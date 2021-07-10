@@ -1,5 +1,5 @@
 {
-    "name": "Bob-monitoring Dev",
+    "name": "Bob-management Dev",
     "build": {
         "dockerfile": "Dockerfile"
     },
