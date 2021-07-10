@@ -1,0 +1,28 @@
+{# Copypaste from https://getbootstrap.com/docs/4.3/components/navbar/ #}
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/">Bob-m</a>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+                <a class="nav-link" href="/login">Login</a>
+            </li>
+            {% if show_link %}
+            <li class="nav-item">
+                <a class="nav-link" href="/">Link</a>
+            </li>
+            {% endif%}
+            <li class="nav-item dropdown">
+                <button class="nav-link btn dropdown-toggle" type="button" id="dropdownMenuButton"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Dropdown button
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" href="#">Action</a>
+                    <a class="dropdown-item" href="#">Another action</a>
+                    <a class="dropdown-item" href="#">Something else here</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
