@@ -4,6 +4,7 @@
         "dockerfile": "Dockerfile"
     },
     "extensions": [
-        "rust-lang.rust"
+        "rust-lang.rust",
+        "karunamurti.tera"
     ]
 }
