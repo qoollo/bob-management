@@ -1,0 +1,9 @@
+{
+    "name": "Bob-monitoring Dev",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "extensions": [
+        "rust-lang.rust"
+    ]
+}
