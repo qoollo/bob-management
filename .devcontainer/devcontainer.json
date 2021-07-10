@@ -5,6 +5,7 @@
     },
     "extensions": [
         "rust-lang.rust",
-        "karunamurti.tera"
+        "karunamurti.tera",
+        "bungcip.better-toml"
     ]
 }
