@@ -5,24 +5,13 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item active">
-                <a class="nav-link" href="/login">Login</a>
+                <a class="nav-link" href="{{ url_for(name="login") }}">Login</a>
             </li>
-            {% if show_link %}
+            {% if set_cluster_addr %}
             <li class="nav-item">
-                <a class="nav-link" href="/">Link</a>
+                <a class="nav-link" href="{{ url_for(name="cluster") }}">Cluster monitor</a>
             </li>
             {% endif%}
-            <li class="nav-item dropdown">
-                <button class="nav-link btn dropdown-toggle" type="button" id="dropdownMenuButton"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Dropdown button
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <a class="dropdown-item" href="#">Action</a>
-                    <a class="dropdown-item" href="#">Another action</a>
-                    <a class="dropdown-item" href="#">Something else here</a>
-                </div>
-            </li>
         </ul>
     </div>
 </nav>
