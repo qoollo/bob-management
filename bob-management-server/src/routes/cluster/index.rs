@@ -1,8 +1,6 @@
-use crate::storage::session_data_storage::*;
+use crate::storages::session_data_storage::*;
 use rocket::http::CookieJar;
 use rocket::response::Redirect;
-use rocket::response::Responder;
-use rocket::Response;
 use rocket_dyn_templates::Template;
 use serde::Serialize;
 

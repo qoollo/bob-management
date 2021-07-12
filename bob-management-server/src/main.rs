@@ -6,7 +6,8 @@ extern crate log;
 use rocket_dyn_templates::Template;
 
 mod routes;
-mod storage;
+mod services;
+mod storages;
 
 #[launch]
 fn rocket() -> _ {

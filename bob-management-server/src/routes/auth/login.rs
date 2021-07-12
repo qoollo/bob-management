@@ -1,4 +1,4 @@
-use crate::storage::session_data_storage::*;
+use crate::storages::session_data_storage::*;
 use rocket::form::Form;
 use rocket::http::CookieJar;
 use rocket::response::Redirect;
