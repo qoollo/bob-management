@@ -1,7 +1,7 @@
 use rocket::Route;
 
-pub mod login;
+pub mod index;
 
 pub fn get_routes() -> Vec<Route> {
-    routes![login::get, login::post]
+    routes![index::get]
 }

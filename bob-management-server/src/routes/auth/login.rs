@@ -11,7 +11,7 @@ pub struct LoginUserInput {
 }
 
 #[get("/auth/login")]
-pub fn login(cookie_jar: &CookieJar) -> Template {
+pub fn get(cookie_jar: &CookieJar) -> Template {
     let mut context = BTreeMap::new();
     if let Some(addr) = cookie_jar.find_cluster_addr() {
         debug!("Addr already set to {:?}!", addr);
@@ -21,10 +21,10 @@ pub fn login(cookie_jar: &CookieJar) -> Template {
 }
 
 #[post("/auth/login", data = "<input>")]
-pub fn login_user(input: Form<LoginUserInput>, cookie_jar: &CookieJar) -> Redirect {
+pub fn post(input: Form<LoginUserInput>, cookie_jar: &CookieJar) -> Redirect {
     debug!("received cluster addr {}", input.cluster_addr);
     if let Ok(addr) = input.cluster_addr.parse() {
         cookie_jar.save_cluster_addr(addr);
     }
-    Redirect::to(uri!(login))
+    Redirect::to(uri!(crate::routes::cluster::index::get))
 }

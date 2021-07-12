@@ -1,7 +1,7 @@
 {% extends "shared/base" %}
 
 {% block content %}
-<form action="{{ url_for(name="login_user") }}" method="post" class="form-group">
+<form action="/auth/login" method="post" class="form-group">
     <div>
         <label for="cluster_addr">Cluster address</label>
         <input name="cluster_addr" id="cluster_addr" class="form-control col-sm-2">

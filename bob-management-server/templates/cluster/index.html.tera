@@ -1,0 +1,12 @@
+{% extends "shared/base" %}
+
+{% block content %}
+{% for node in nodes %}
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <h5 class="card-title {% if node.active %}text-success{% else %}text-danger{% endif %}">{{node.name}}</h5>
+        <p class="card-text">{{node.addr}}</p>
+    </div>
+</div>
+{% endfor %}
+{% endblock content %}
