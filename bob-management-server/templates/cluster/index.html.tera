@@ -1,6 +1,9 @@
 {% extends "shared/base" %}
 
 {% block content %}
+{% if error %}
+<h2>Error getting nodes: {{ error }}</h2>
+{% endif %}
 {% for node in nodes %}
 <div class="card" style="width: 18rem;">
     <div class="card-body">

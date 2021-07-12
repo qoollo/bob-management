@@ -1,1 +1,1 @@
-mod bob;
+pub mod bob;
