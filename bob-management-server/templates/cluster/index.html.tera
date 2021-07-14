@@ -9,6 +9,15 @@
     <div class="card-body">
         <h5 class="card-title {% if node.active %}text-success{% else %}text-danger{% endif %}">{{node.name}}</h5>
         <p class="card-text">{{node.addr}}</p>
+        <p class="card-text">
+            {% for vdisk in node.vdisks %}
+        <div>Vdisk {{ vdisk.id }}
+            {% for replica in vdisk.replicas %}
+            <li>{{ replica.disk }} at {{ replica.path }}</li>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        </p>
     </div>
 </div>
 {% endfor %}
