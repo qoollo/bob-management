@@ -4,6 +4,9 @@
 {% if error %}
 <h2>Error getting nodes: {{ error }}</h2>
 {% endif %}
+
+<h1>Cluster nodes</h1>
+
 {% for node in nodes %}
 <div class="card" style="width: 18rem;">
     <div class="card-body">
