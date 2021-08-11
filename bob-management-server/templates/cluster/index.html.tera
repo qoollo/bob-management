@@ -8,19 +8,22 @@
 <h1>Cluster nodes</h1>
 
 {% for node in nodes %}
-<div class="card" style="width: 18rem;">
-    <div class="card-body">
-        <h5 class="card-title {% if node.active %}text-success{% else %}text-danger{% endif %}">{{node.name}}</h5>
-        <p class="card-text">{{node.addr}}</p>
-        <p class="card-text">
-            {% for vdisk in node.vdisks %}
-        <div>Vdisk {{ vdisk.id }}
-            {% for replica in vdisk.replicas %}
-            <li>{{ replica.disk }} at {{ replica.path }}</li>
+<div style="width: 30%; display: inline-block; margin: 10px; padding: 5px; border: 2px solid gray;">
+    <h5 class="{% if node.active %}text-success{% else %}text-danger{% endif %}">{{node.name}}</h5>
+    <p>{{node.addr}}</p>
+    <div>
+        {% for vdisk in node.vdisks %}
+        <div>
+            <span>Vdisk {{ vdisk.id }}</span>
+            <ul>
+                {% for replica in vdisk.replicas %}
+                <div>
+                    <li>{{ replica.disk }} at {{ replica.path }}</li>
+                </div>
+            </ul>
             {% endfor %}
         </div>
         {% endfor %}
-        </p>
     </div>
 </div>
 {% endfor %}

@@ -86,6 +86,7 @@ pub async fn get(cookie_jar: &CookieJar<'_>) -> Result<Template, Redirect> {
                     let active = is_active(node).await.unwrap_or(false);
                     result.push(NodeDto::new(node, active));
                 }
+                result.sort_by(|x, y| x.name.cmp(&y.name));
                 IndexContext::from_nodes(result)
             }
             Err(e) => IndexContext::from_error(format!("{:?}", e)),
