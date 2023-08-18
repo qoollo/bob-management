@@ -1,4 +1,101 @@
+[package]
+name = "bob_management"
+version = "0.1.0"
+default-run = "bob_management"
+edition = "2021"
+description = "Bob Management GUI"
+authors = ["Romanov Simeon ArchArcheoss@proton.me", "Artemev Ilia", "Riadinskii Kirill"]
+license = "Unlicense"
+repository = "https://github.com/qoollo/bob-management"
+publish = false
+keywords = [ "BOB", "Management", "GUI" ]
+readme = "./README.md"
+
+[[bin]]
+name = "fullstack"
+path = ".cargo/bin/fullstack.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "tsync"
+path = ".cargo/bin/tsync.rs"
+
+[[bin]]
+name = "backend"
+path = ".cargo/bin/backend.rs"
+
+[[bin]]
+name = "frontend"
+path = ".cargo/bin/frontend.rs"
+
+[[bin]]
+name = "bob_management"
+path = "backend/src/main.rs"
+
+[dependencies]
+# Axum related
+axum = "0.6"
+axum-login = "0.5"
+axum-sessions = "0.5"
+tower = "0.4"
+tower-http = { version = "0.4", features = ["cors"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Error Handling
+color-eyre = "0.6"
+thiserror = "1.0"
+
+# General
+tokio = { version = "1.0", features = ["full"] }
+tsync = "2"
+chrono = { version = "0.4", features = ["serde"] }
+
+# OpenAPI + Swagger
+utoipa = { version = "3.4", features = ["axum_extras",  "chrono", "openapi_extensions"] }
+utoipa-swagger-ui = { version = "3.1", features = ["axum"] }
+utoipa-redoc = { version = "0.1", features = ["axum"] }
+utoipa-rapidoc = { version = "0.1", features = ["axum"] }
+
+# CLI
+cli = { path = "./cli" }
+
+# Backend Lib
+backend = { path = "./backend"}
+
 [workspace]
-members = [
-    "bob-management-server",
-]
+members = [ "cli", "backend" ]
+
+[features]
+dev = [  ]
+
+[profile.dev]
+debug-assertions = true
+
+[profile.release]
+# Link Time optimization, causes a bit longer compilation
+# lto = true 
+
+# Optimize for size
+# opt-level = "s"
+# Optimize for speed
+opt-level = 3 
+
+# Strip symbols from binary; Turn off for cargo bloat command
+strip = true 
+
+# Maximize size reduction optimization, causes longer compilation
+codegen-units = 1 
+
+# Slightly increase perfomance and reduce binary size
+panic = "abort"
+
+[profile.release-lto]
+inherits = "release"
+lto = true
+
+[profile.min-size]
+inherits = "release"
+opt-level = "s"

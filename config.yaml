@@ -1,0 +1,17 @@
+address: 0.0.0.0:7000
+trace-level: INFO
+request-timeout: 50
+cors:
+  origins:
+    - http://localhost:3005
+    - http://localhost:3000
+  allow-credentials: true
+  allow-private-network: true
+  allow-headers:
+    - AUTHORIZATION
+    - ACCEPT
+    - CONTENT-TYPE
+  allow-methods:
+    - POST
+    - GET
+  max-age: 3600
