@@ -1,0 +1,60 @@
+{
+  "name": "bob-management",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "eslint-plugin-react": "^7.33.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.1",
+    "web-vitals": "^3.1.1"
+  },
+  "scripts": {
+    "start": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "start:dev": "npm install && vite",
+    "test": "npx playwright test ./tests"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.30.0",
+    "@types/node": "^18.13.0",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "@vitejs/plugin-react-swc": "^3.3.2",
+    "ansi-to-react": "^6.1.6",
+    "concurrently": "^7.6.0",
+    "eslint": "^8.47.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "glob": "^8.1.0",
+    "prettier": "^3.0.2",
+    "reconnecting-websocket": "4.4.0",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.5"
+  },
+  "overrides": {
+    "ansi-to-react": {
+      "react": "^18",
+      "react-dom": "^18"
+    }
+  }
+}

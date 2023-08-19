@@ -6,7 +6,7 @@ use cli::Parser;
 use error_stack::{Result, ResultExt};
 use std::path::PathBuf;
 use tower::ServiceBuilder;
-use tower_http::cors::CorsLayer;
+use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing::Level;
 
 #[tokio::main]
@@ -48,8 +48,10 @@ fn init_tracer(_log_file: &Option<PathBuf>, trace_level: Level) {
 fn router(cors: CorsLayer) -> Router {
     // Add api
     Router::new()
+        // Frontend
+        .nest_service("/", ServeDir::new("./dist"))
         // Unsecured Routes
-        .route("/", get(root))
+        .route("/root", get(root))
         .nest("/api", api_router())
         .layer(ServiceBuilder::new().layer(cors))
 }

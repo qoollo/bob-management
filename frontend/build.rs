@@ -48,11 +48,11 @@ pub fn build_types() {
 pub fn build_frontend() {
     // Only install frontend dependencies when building release
     // #[cfg(not(debug_assertions))]
-    shell("npm install --frozen-lockfile");
+    shell("yarn");
 
     // Only build frontend when building a release
     // #[cfg(not(debug_assertions))]
-    shell("npm build");
+    shell("yarn build");
 }
 
 #[allow(dead_code)]
