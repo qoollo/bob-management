@@ -20,6 +20,18 @@ export default defineConfig({
                 target: 'http://localhost:9000',
                 changeOrigin: true,
             },
+            '/swagger-ui': {
+                target: 'http://localhost:9000',
+                changeOrigin: true,
+            },
+            '/redoc': {
+                target: 'http://localhost:9000',
+                changeOrigin: true,
+            },
+            '/rapidoc': {
+                target: 'http://localhost:9000',
+                changeOrigin: true,
+            },
         },
     },
 });
