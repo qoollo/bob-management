@@ -14,6 +14,14 @@ This will run dev. server on 21012 port for frontend and backend server on port 
 
 ---
 
+Run debug build: 
+
+```sh
+cargo run -- --default
+```
+
+---
+
 Make release build:
 
 ```sh
