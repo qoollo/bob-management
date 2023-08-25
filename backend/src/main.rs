@@ -17,9 +17,9 @@ use utoipa_swagger_ui::SwaggerUi;
 async fn main() -> Result<()> {
     color_eyre::install()?;
 
-    let config: cli::Config = dbg!(cli::Args::parse()
+    let config: cli::Config = cli::Args::parse()
         .try_into()
-        .expect("couldn't get config file"));
+        .expect("couldn't get config file");
 
     init_tracer(&config.log_file, config.trace_level);
 
