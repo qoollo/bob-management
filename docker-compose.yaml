@@ -1,0 +1,27 @@
+---
+version: "3.8"
+services:
+  bob-gui:
+    build:
+      context: ./
+      dockerfile: dockerfiles/alpine/Dockerfile
+    networks:
+      bobnet:
+        ipv4_address: 192.168.17.11
+    ports:
+      - "9000:9000"
+  bob-gui-dev:
+    build:
+      context: ./
+      dockerfile: dockerfiles/alpine/Dockerfile.dev
+    networks:
+      bobnet:
+        ipv4_address: 192.168.17.12
+    ports:
+      - "8000:9000"
+networks:
+  bobnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.17.0/24
