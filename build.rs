@@ -10,7 +10,7 @@ fn main() {
         dir.pop();
         dir.pop();
         dir.pop();
-        println!("cargo:warning=OUT DIR: {dir:?}");
+        println!("cargo:warning=Moving /dist to: {dir:?}");
         println!("cargo:warning=PROJECT DIR: {project:?}");
         println!(
             "cargo:warning=cp: {:?}",

@@ -1,5 +1,6 @@
 #![allow(clippy::multiple_crate_versions)]
 
+use axum::routing::get;
 #[cfg(feature = "swagger")]
 use axum::Router;
 #[cfg(feature = "swagger")]
@@ -33,21 +34,30 @@ pub fn openapi_doc() -> Router {
     use utoipa_swagger_ui::SwaggerUi;
 
     /* Swagger-only routes */
+    #[cfg(debug_assertions)]
+    tracing::info!("Generating OpenAPI documentation...");
     #[derive(OpenApi)]
     #[openapi(
-                paths(root),
-                tags(
-                    (name = "bob", description = "BOB management API")
-                )
-            )]
+            paths(root),
+            tags(
+                (name = "bob", description = "BOB management API")
+            )
+        )]
     struct ApiDoc;
     /* Mount Swagger ui */
-    Router::new()
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+    Router::new().merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .merge(Redoc::with_url("/redoc", ApiDoc::openapi()))
         // There is no need to create `RapiDoc::with_openapi` because the OpenApi is served
         // via SwaggerUi instead we only make rapidoc to point to the existing doc.
         .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
+        .route(
+            "/api-docs/openapi.yaml",
+            get(|| async {
+                ApiDoc::openapi()
+                    .to_yaml()
+                    .expect("Couldn't produce .yaml API scheme")
+            }),
+        )
     // Alternative to above
     // .merge(RapiDoc::with_openapi("/api-docs/openapi2.json", ApiDoc::openapi()).path("/rapidoc"))
 }
