@@ -55,6 +55,7 @@ fn init_tracer(_log_file: &Option<PathBuf>, trace_level: Level) {
     subscriber.init();
 }
 
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 fn router(cors: CorsLayer) -> Router {
     let mut frontend = env::current_exe().expect("Couldn't get current executable path.");
     frontend.pop();
