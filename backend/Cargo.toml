@@ -10,6 +10,10 @@ edition.workspace = true
 readme.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "gen-openapi"
+path = ".cargo/bin/gen_openapi.rs"
+
 [dependencies]
 # Backend (lib.rs)
 ## Axum related
