@@ -28,7 +28,6 @@ RUN apt-get update \
   && rustup target add $BUILD_TARGET
 
 
-# RUN USER=root cargo new --bin bob-management
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./build.rs ./build.rs
 COPY ./cli ./cli
@@ -48,11 +47,6 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     && mkdir /build_output/backend \
     && mkdir /build_output/frontend \
     && cp -f target/$BUILD_TARGET/debug/bob_management /build_output/backend/bob_management \
-    # FIXME: Swagger-Ui doesn't work in docker for some reason - RapiDoc and Redoc are OK
-    # && mkdir /build_output/target/ \
-    # && mkdir /build_output/target/debug \
-    # && find target/$BUILD_TARGET/debug/build -maxdepth 1 -name "utoipa-swagger-ui*" \
-    # && mv -v $(find target/$BUILD_TARGET/debug/build -maxdepth 1 -name "utoipa-swagger-ui*") /build_output/build \
     && cp -r -f target/frontend/dist /build_output/frontend/dist
 
 FROM alpine:3.18
@@ -70,7 +64,6 @@ EXPOSE 9000
 
 COPY --from=builder --chown=$APP_USER:$APP_USER /build_output/backend ${APP}/backend
 COPY --from=builder --chown=$APP_USER:$APP_USER /build_output/frontend ${APP}/frontend
-# COPY --from=builder --chown=$APP_USER:$APP_USER /build_output/build ${APP}/build
 
 USER $APP_USER
 WORKDIR ${APP}
