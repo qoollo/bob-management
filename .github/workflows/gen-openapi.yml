@@ -23,4 +23,3 @@ jobs:
           git add api
           git commit -m "Update API schema"
           git push
-  
