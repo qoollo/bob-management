@@ -41,4 +41,12 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
+  gen-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/cargo@v1
+        with:
+          command: run
+          args: --bin gen-openapi
           args: -- -D warnings
