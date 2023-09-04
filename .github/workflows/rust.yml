@@ -49,4 +49,3 @@ jobs:
         with:
           command: run
           args: --bin gen-openapi
-          args: -- -D warnings
