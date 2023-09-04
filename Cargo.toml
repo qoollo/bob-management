@@ -6,10 +6,6 @@ readme = "./README.md"
 license-file = "./LICENSE"
 edition = "2021"
 
-[[bin]]
-name = "gen-openapi"
-path = ".cargo/bin/gen_openapi.rs"
-
 [workspace]
 members = [ "cli", "frontend", "backend" ]
 default-members = [ "frontend", "backend"]
