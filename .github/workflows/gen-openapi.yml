@@ -1,5 +1,7 @@
 name: API
 
+on: [workflow_dispatch]
+
 jobs:
   gen-openapi:
     runs-on: ubuntu-latest
