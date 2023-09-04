@@ -1,0 +1,35 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "bob_management",
+    "description": "Bob Management GUI",
+    "contact": {
+      "name": "Romanov Simeon ArchArcheoss@proton.me"
+    },
+    "license": {
+      "name": "Unlicense"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "backend"
+        ],
+        "operationId": "root",
+        "responses": {
+          "200": {
+            "description": "Hello Bob!"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "bob",
+      "description": "BOB management API"
+    }
+  ]
+}
