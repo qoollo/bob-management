@@ -49,3 +49,8 @@ jobs:
         with:
           command: run
           args: --bin gen-openapi
+      - uses: actions/upload-artifact@v3
+        with:
+          name: API schemas
+          path: api/*
+        
