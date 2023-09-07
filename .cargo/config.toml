@@ -1,0 +1,7 @@
+[alias]
+backend="build --features backend --no-default-features"
+frontend="run --bin frontend --features frontend --no-default-features"
+swagger="run --features swagger -- --default"
+
+# [build]
+# target-dir=".cargo/.build"

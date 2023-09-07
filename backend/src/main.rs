@@ -7,10 +7,6 @@ use cli::Parser;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use tracing::Level;
-use utoipa::OpenApi;
-use utoipa_rapidoc::RapiDoc;
-use utoipa_redoc::{Redoc, Servable};
-use utoipa_swagger_ui::SwaggerUi;
 
 #[tokio::main]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
@@ -21,7 +17,11 @@ async fn main() -> Result<()> {
         .try_into()
         .expect("couldn't get config file");
 
-    init_tracer(&config.log_file, config.trace_level);
+    let logger: cli::Logger = cli::Args::parse()
+        .try_into()
+        .expect("couldn't get logger configuration file");
+    init_tracer(&logger.log_file, logger.trace_level);
+    tracing::info!("Logger: {logger:?}");
 
     let cors: CorsLayer = config.cors.clone().into();
     tracing::info!("CORS: {cors:?}");
@@ -30,26 +30,8 @@ async fn main() -> Result<()> {
     tracing::info!("listening on {addr}");
 
     let app = router(cors);
-    #[cfg(debug_assertions)]
-    let app = {
-        /* Development-only routes */
-        #[derive(OpenApi)]
-        #[openapi(
-                paths(backend::root),
-                tags(
-                    (name = "bob", description = "BOB management API")
-                )
-            )]
-        struct ApiDoc;
-        /* Mount Swagger ui */
-        app.merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-            .merge(Redoc::with_url("/redoc", ApiDoc::openapi()))
-            // There is no need to create `RapiDoc::with_openapi` because the OpenApi is served
-            // via SwaggerUi instead we only make rapidoc to point to the existing doc.
-            .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
-        // Alternative to above
-        // .merge(RapiDoc::with_openapi("/api-docs/openapi2.json", ApiDoc::openapi()).path("/rapidoc"))
-    };
+    #[cfg(feature = "swagger")]
+    let app = app.merge(backend::openapi_doc());
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

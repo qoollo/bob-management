@@ -2,7 +2,7 @@ use clap::Parser;
 use color_eyre::{eyre::eyre, Report, Result};
 use std::path::PathBuf;
 
-use crate::config::Config;
+use crate::config::{Config, FromFile, Logger};
 
 /// Bob configuration
 #[derive(Debug, Parser, Clone)]
@@ -29,6 +29,20 @@ impl TryFrom<Args> for Config {
             Self::from_file(config)
         } else {
             Err(eyre!("Unexpected error: empty configuration"))
+        }
+    }
+}
+
+impl TryFrom<Args> for Logger {
+    type Error = Report;
+
+    fn try_from(value: Args) -> Result<Self> {
+        if value.default {
+            Ok(Self::default())
+        } else if let Some(config) = value.config_file {
+            Self::from_file(config)
+        } else {
+            Err(eyre!("Unexpected error: empty logger configuration"))
         }
     }
 }

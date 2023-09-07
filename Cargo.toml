@@ -11,90 +11,78 @@ publish = false
 keywords = [ "BOB", "Management", "GUI" ]
 readme = "./README.md"
 
-[[bin]]
-name = "fullstack"
-path = ".cargo/bin/fullstack.rs"
-required-features = ["dev"]
-
-[[bin]]
-name = "tsync"
-path = ".cargo/bin/tsync.rs"
-
-[[bin]]
-name = "backend"
-path = ".cargo/bin/backend.rs"
-
+# Force frontend build
 [[bin]]
 name = "frontend"
-path = ".cargo/bin/frontend.rs"
+path = "frontend/build.rs"
+required-features = [ "frontend" ]
 
 [[bin]]
 name = "bob_management"
 path = "backend/src/main.rs"
+required-features = [ "backend", "frontend" ]
+
+[[bin]]
+name = "backend"
+path = "backend/src/main.rs"
+required-features = [ "backend" ]
+
+[build-dependencies]
+# Frontend
+tsync = { version = "2", optional = true }
 
 [dependencies]
-# Axum related
-axum = "0.6"
-axum-login = "0.5"
-axum-sessions = "0.5"
-tower = "0.4"
-tower-http = { version = "0.4", features = ["cors"] }
+# Frontend (for `cargo frontend` command)
+tsync = { version = "2", optional = true }
 
-# Logging
-tracing = "0.1"
-tracing-subscriber = "0.3"
+# Backend (main.rs)
+## Axum related
+axum = { version = "0.6", optional = true }
+tower = { version = "0.4", optional = true }
+tower-http = { version = "0.4", features = ["cors"], optional = true }
 
-# Error Handling
-color-eyre = "0.6"
-thiserror = "1.0"
+## Logging
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", optional = true }
 
-# General
-tokio = { version = "1.0", features = ["full"] }
-tsync = "2"
-chrono = { version = "0.4", features = ["serde"] }
-
-# OpenAPI + Swagger
-utoipa = { version = "3.4", features = ["axum_extras",  "chrono", "openapi_extensions"] }
-utoipa-swagger-ui = { version = "3.1", features = ["axum"] }
-utoipa-redoc = { version = "0.1", features = ["axum"] }
-utoipa-rapidoc = { version = "0.1", features = ["axum"] }
+## General
+tokio = { version = "1.0", features = [], optional = true }
 
 # CLI
-cli = { path = "./cli" }
+cli = { path = "./cli", optional = true }
 
 # Backend Lib
-backend = { path = "./backend"}
+backend = { path = "./backend", optional = true }
+
+color-eyre = {version = "0.6.2", optional = true }
 
 [workspace]
 members = [ "cli", "backend" ]
 
 [features]
-dev = [  ]
+default = [ "frontend", "backend", "swagger" ] 
+frontend = [ "tsync" ]
+swagger = [ "backend/swagger" ]
+backend = [ "axum", "tower", "tower-http" , "tracing", "tracing-subscriber", "tokio", "cli", "dep:backend", "color-eyre" ]
 
 [profile.dev]
 debug-assertions = true
 
 [profile.release]
-# Link Time optimization, causes a bit longer compilation
-# lto = true 
-
 # Optimize for size
 # opt-level = "s"
 # Optimize for speed
 opt-level = 3 
-
-# Strip symbols from binary; Turn off for cargo bloat command
-strip = true 
-
-# Maximize size reduction optimization, causes longer compilation
-codegen-units = 1 
 
 # Slightly increase perfomance and reduce binary size
 panic = "abort"
 
 [profile.release-lto]
 inherits = "release"
+# Link Time optimization, causes a bit longer compilation
 lto = true
+# Maximize size reduction optimization, causes longer compilation
+codegen-units = 1 
 
 [profile.min-size]
 inherits = "release"
