@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: bob_management
-  description: Bob Management GUI
+  title: backend
+  description: 'Bob Management GUI: Backend'
   contact:
     name: Romanov Simeon ArchArcheoss@proton.me
   license:
@@ -11,7 +11,7 @@ paths:
   /:
     get:
       tags:
-      - backend
+      - crate
       operationId: root
       responses:
         '200':
