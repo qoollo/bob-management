@@ -4,6 +4,7 @@
 use axum::Router;
 #[cfg(feature = "swagger")]
 use utoipa::OpenApi;
+
 pub mod config;
 pub mod connector;
 pub mod error;
