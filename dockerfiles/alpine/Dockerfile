@@ -14,7 +14,8 @@ RUN apt-get update \
     && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
 
 # Create deb repository
-ENV NODE_MAJOR=20
+# FIXME: Replace it with Nodejs 20.x when it will be fixed
+ENV NODE_MAJOR=18
 RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
 # Install yarn keys
