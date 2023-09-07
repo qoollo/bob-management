@@ -34,15 +34,15 @@ fn shell(command: impl AsRef<OsStr> + Display) {
         .arg(SHELL_ARG)
         .arg(&command)
         .output()
-        .expect(format!("Failed to run {cmd}", cmd = command).as_str());
+        .unwrap_or_else(|_| panic!("Failed to run {cmd}", cmd = command));
 
     // println!("build.rs => {:?}", output.stdout);
-    let mut file = File::create("build.log").expect("Couldn't create log file...");
-    file.write(b"build log\n\n\n\nSTDOUT:\n")
+    let mut file = File::create("build.log").expect("Couldn't create file...");
+    file.write_all(b"build log\n\n\n\nSTDOUT:\n")
         .expect("Couldn't write to build log");
     file.write_all(&output.stdout)
         .expect("Couldn't write to build log");
-    file.write(b"\n\n\n\nSTDERR:\n")
+    file.write_all(b"\n\n\n\nSTDERR:\n")
         .expect("Couldn't write to build log");
     file.write_all(&output.stderr)
         .expect("Couldn't write to build log");
