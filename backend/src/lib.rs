@@ -4,7 +4,6 @@
 use axum::{routing::get, Router};
 
 use utoipa::OpenApi;
-
 pub mod config;
 pub mod connector;
 pub mod error;

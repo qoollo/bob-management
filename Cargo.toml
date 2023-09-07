@@ -12,19 +12,10 @@ default-members = [ "frontend", "backend"]
 resolver = "2"
 
 [profile.release]
-# Link Time optimization, causes a bit longer compilation
-# lto = true 
-
 # Optimize for size
 # opt-level = "s"
 # Optimize for speed
 opt-level = 3 
-
-# Strip symbols from binary; Turn off for cargo bloat command
-strip = true 
-
-# Maximize size reduction optimization, causes longer compilation
-codegen-units = 1 
 
 # Slightly increase perfomance and reduce binary size
 panic = "abort"
