@@ -1,11 +1,11 @@
+use std::fs::File;
+use std::path::PathBuf;
 ///
 /// Build Script
 /// This is run as a pre-build step -- before the rust backend is compiled.
 /// NOTE: Should be included in root's build script
 ///
 use std::{io::Write, process::Command};
-use std::path::PathBuf;
-use std::fs::File;
 
 /*
  * Note 1: this file was written for *nix systems -- it likely won't

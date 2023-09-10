@@ -1,11 +1,11 @@
 use color_eyre::Result;
 use serde::{de::DeserializeOwned, Deserialize};
 use serde_with::{serde_as, DisplayFromStr};
-use std::{fs::File, io::BufReader, net::SocketAddr, path::PathBuf};
+use std::{fs::File, io::BufReader, net::SocketAddr, path::PathBuf, time::Duration};
 use tower_http::cors::CorsLayer;
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Timeout(u64);
+pub struct Timeout(#[serde(with = "humantime_serde")] Duration);
 #[derive(Debug, Clone, Deserialize)]
 pub struct CorsAllowAll(bool);
 #[derive(Debug, Clone, Deserialize)]
@@ -22,18 +22,21 @@ pub struct Config {
 
     /// Enable Default Cors configuration
     #[serde(default)]
-    pub cors: CorsAllowAll,
+    pub cors_allow_all: CorsAllowAll,
 
     /// Max Time to Responce, in milliseconds
     #[serde(default)]
     pub request_timeout: Timeout,
+
+    /// [`Logger`](LoggerConfig) Configuration
+    pub logger: LoggerConfig,
 }
 
 /// Logger Configuration passed on initialization
 #[serde_as]
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct Logger {
+pub struct LoggerConfig {
     /// [Stub] File to save logs
     pub log_file: Option<PathBuf>,
 
@@ -64,7 +67,7 @@ impl Default for CorsAllowAll {
 
 impl Default for Timeout {
     fn default() -> Self {
-        Self(5000)
+        Self(Duration::from_millis(5000))
     }
 }
 
@@ -93,13 +96,14 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             address: SocketAddr::from(([0, 0, 0, 0], 7000)),
-            cors: CorsAllowAll::default(),
+            cors_allow_all: CorsAllowAll::default(),
             request_timeout: Timeout::default(),
+            logger: LoggerConfig::default(),
         }
     }
 }
 
-impl Default for Logger {
+impl Default for LoggerConfig {
     fn default() -> Self {
         Self {
             log_file: None,
@@ -128,4 +132,4 @@ pub trait FromFile {
 }
 
 impl FromFile for Config {}
-impl FromFile for Logger {}
+impl FromFile for LoggerConfig {}

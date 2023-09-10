@@ -1,6 +1,6 @@
 [alias]
-backend="build --features backend --no-default-features"
-frontend="run --bin frontend --features frontend --no-default-features"
+backend="build --no-default-features"
+frontend="run -p bob_management --bin frontend --features frontend --no-default-features"
 swagger="run --features swagger -- --default"
 
 # [build]

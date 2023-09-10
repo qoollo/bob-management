@@ -1,17 +1,29 @@
 #![allow(clippy::module_name_repetitions)]
+use std::fmt;
+
 use axum::response::{IntoResponse, Response};
-use color_eyre::eyre::Error;
+use error_stack::Context;
 use hyper::StatusCode;
 use thiserror::Error;
 
-/// Generic error that wraps `eyre::Error`.
+/// Generic error that wraps `error_stack::Context`.
+/// Generally used for notifying the client that some error occurred on the server
 ///
 /// For the internal server errors
-pub struct AppError(Error);
+#[derive(Debug)]
+pub struct InternalAppError;
 
-impl IntoResponse for AppError {
+impl fmt::Display for InternalAppError {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str("Interval Server Error")
+    }
+}
+
+impl Context for InternalAppError {}
+
+impl IntoResponse for InternalAppError {
     fn into_response(self) -> Response {
-        tracing::error!("{}", self.0);
+        tracing::error!("{}", self);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Something went wrong".to_string(),
@@ -20,16 +32,16 @@ impl IntoResponse for AppError {
     }
 }
 
-/// Enables using `?` on functions that return `Result<_, eyre::Error>` to turn them into
-/// `Result<_, AppError>`.
-impl<E> From<E> for AppError
-where
-    E: Into<Error>,
-{
-    fn from(err: E) -> Self {
-        Self(err.into())
+#[derive(Debug)]
+pub struct InitServerError;
+
+impl fmt::Display for InitServerError {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str("server initialization failed")
     }
 }
+
+impl Context for InitServerError {}
 
 /// Errors that happend during API request proccessing
 ///

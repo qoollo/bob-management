@@ -1,15 +1,17 @@
 [package]
 name = "bob_management"
-version = "0.1.0"
-default-run = "bob_management"
+version.workspace = true
 edition = "2021"
 description = "Bob Management GUI"
-authors = ["Romanov Simeon ArchArcheoss@proton.me", "Artemev Ilia", "Riadinskii Kirill"]
+authors = ["Romanov Simeon ArchArcheoss@proton.me"]
 license = "Unlicense"
 repository = "https://github.com/qoollo/bob-management"
 publish = false
 keywords = [ "BOB", "Management", "GUI" ]
 readme = "./README.md"
+
+[workspace.package]
+version = "0.0.0"   # Bob GUI version
 
 # Force frontend build
 [[bin]]
@@ -17,36 +19,13 @@ name = "frontend"
 path = "frontend/build.rs"
 required-features = [ "frontend" ]
 
-[[bin]]
-name = "bob_management"
-path = "backend/src/main.rs"
-required-features = [ "backend", "frontend" ]
-
-[[bin]]
-name = "backend"
-path = "backend/src/main.rs"
-required-features = [ "backend" ]
-
 [build-dependencies]
 # Frontend
 tsync = { version = "2", optional = true }
 
 [dependencies]
-# Frontend (for `cargo frontend` command)
+# Frontend (for `cargo frontend` command to force frontend rebuild)
 tsync = { version = "2", optional = true }
-
-# Backend (main.rs)
-## Axum related
-axum = { version = "0.6", optional = true }
-tower = { version = "0.4", optional = true }
-tower-http = { version = "0.4", features = ["cors"], optional = true }
-
-## Logging
-tracing = { version = "0.1", optional = true }
-tracing-subscriber = { version = "0.3", optional = true }
-
-## General
-tokio = { version = "1.0", features = [], optional = true }
 
 # CLI
 cli = { path = "./cli", optional = true }
@@ -54,16 +33,14 @@ cli = { path = "./cli", optional = true }
 # Backend Lib
 backend = { path = "./backend", optional = true }
 
-color-eyre = {version = "0.6.2", optional = true }
-
 [workspace]
 members = [ "cli", "backend" ]
+default-members = [ "backend" ]
 
 [features]
-default = [ "frontend", "backend", "swagger" ] 
+default = [ "frontend", "swagger" ] 
 frontend = [ "tsync" ]
 swagger = [ "backend/swagger" ]
-backend = [ "axum", "tower", "tower-http" , "tracing", "tracing-subscriber", "tokio", "cli", "dep:backend", "color-eyre" ]
 
 [profile.dev]
 debug-assertions = true

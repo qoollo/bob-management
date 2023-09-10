@@ -3,6 +3,7 @@ mod frontend {
     include!("frontend/build.rs");
 }
 
+#[allow(clippy::unwrap_used)]
 fn main() {
     #[cfg(feature = "frontend")]
     {
