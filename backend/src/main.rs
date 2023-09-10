@@ -4,7 +4,7 @@ use axum::{routing::get, Router};
 use backend::{config::ConfigExt, prelude::*, root, services::api_router};
 use cli::Parser;
 use error_stack::{Result, ResultExt};
-use std::{path::PathBuf, env};
+use std::{env, path::PathBuf};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing::Level;
@@ -49,7 +49,7 @@ fn router(cors: CorsLayer) -> Router {
     let mut frontend = env::current_exe().expect("Couldn't get current executable path.");
     frontend.pop();
     frontend.push("dist");
-    dbg!(&frontend);
+    tracing::info!("serving frontend at: {frontend:?}");
     // Add api
     Router::new()
         // Frontend

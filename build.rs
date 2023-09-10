@@ -5,19 +5,21 @@ use std::{path::PathBuf, process::Command};
 fn main() {
     #[cfg(feature = "frontend")]
     {
-        let mut dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
-        let project = PathBuf::from(std::env::var_os("PWD").unwrap());
+        let mut dir = PathBuf::from(std::env::var("OUT_DIR").unwrap()); // OUT_DIR == <project_dir>/target/<backend_dir>/build/bob_management-<HASH>/out
         dir.pop();
         dir.pop();
         dir.pop();
+        let mut project_dir = dir.clone();
+        project_dir.pop();
+        project_dir.pop();
         println!("cargo:warning=Moving /dist to: {dir:?}");
-        println!("cargo:warning=PROJECT DIR: {project:?}");
+        println!("cargo:warning=PROJECT DIR: {project_dir:?}");
         println!(
             "cargo:warning=cp: {:?}",
             Command::new("cp")
                 .args([
                     "-rf",
-                    &format!("{}/frontend/dist", project.to_string_lossy()),
+                    &format!("{}/frontend/dist", project_dir.to_string_lossy()),
                     dir.to_str().unwrap()
                 ])
                 .output()

@@ -1,8 +1,7 @@
 #![allow(clippy::multiple_crate_versions)]
 
-use axum::routing::get;
 #[cfg(feature = "swagger")]
-use axum::Router;
+use axum::{routing::get, Router};
 #[cfg(feature = "swagger")]
 use utoipa::OpenApi;
 
@@ -45,7 +44,8 @@ pub fn openapi_doc() -> Router {
         )]
     struct ApiDoc;
     /* Mount Swagger ui */
-    Router::new().merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+    Router::new()
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .merge(Redoc::with_url("/redoc", ApiDoc::openapi()))
         // There is no need to create `RapiDoc::with_openapi` because the OpenApi is served
         // via SwaggerUi instead we only make rapidoc to point to the existing doc.
