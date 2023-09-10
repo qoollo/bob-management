@@ -4,15 +4,6 @@ use serde_with::{serde_as, DisplayFromStr};
 use std::{fs::File, io::BufReader, net::SocketAddr, path::PathBuf, time::Duration};
 use tower_http::cors::CorsLayer;
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct Timeout(#[serde(with = "humantime_serde")] Duration);
-#[derive(Debug, Clone, Deserialize)]
-pub struct CorsAllowAll(bool);
-#[derive(Debug, Clone, Deserialize)]
-pub struct LogAmount(usize);
-#[derive(Debug, Clone, Deserialize)]
-pub struct LogSize(u64);
-
 /// Server Configuration passed on initialization
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -21,18 +12,21 @@ pub struct Config {
     pub address: SocketAddr,
 
     /// Enable Default Cors configuration
-    #[serde(default)]
-    pub cors_allow_all: CorsAllowAll,
+    #[serde(default = "default_cors")]
+    pub cors_allow_all: bool,
 
     /// Max Time to Responce, in milliseconds
-    #[serde(default)]
-    pub request_timeout: Timeout,
+    #[serde(default = "default_timeout")]
+    #[serde(with = "humantime_serde")]
+    pub request_timeout: Duration,
 
     /// [`Logger`](LoggerConfig) Configuration
+    #[serde(flatten)]
     pub logger: LoggerConfig,
 }
 
 /// Logger Configuration passed on initialization
+#[allow(clippy::module_name_repetitions)]
 #[serde_as]
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -41,12 +35,12 @@ pub struct LoggerConfig {
     pub log_file: Option<PathBuf>,
 
     /// [Stub] Number of log files
-    #[serde(default)]
-    pub log_amount: LogAmount,
+    #[serde(default = "default_log_amount")]
+    pub log_amount: usize,
 
     /// [Stub] Max size of a single log file, in bytes
-    #[serde(default)]
-    pub log_size: LogSize,
+    #[serde(default = "default_log_size")]
+    pub log_size: u64,
 
     /// Tracing Level
     #[serde(default = "tracing_default")]
@@ -54,40 +48,12 @@ pub struct LoggerConfig {
     pub trace_level: tracing::Level,
 }
 
-const fn tracing_default() -> tracing::Level {
-    tracing::Level::INFO
-}
-
-#[allow(clippy::derivable_impls)]
-impl Default for CorsAllowAll {
-    fn default() -> Self {
-        Self(false)
-    }
-}
-
-impl Default for Timeout {
-    fn default() -> Self {
-        Self(Duration::from_millis(5000))
-    }
-}
-
-impl Default for LogAmount {
-    fn default() -> Self {
-        Self(5)
-    }
-}
-
-impl Default for LogSize {
-    fn default() -> Self {
-        Self(10u64.pow(6))
-    }
-}
-
-impl From<CorsAllowAll> for CorsLayer {
-    fn from(value: CorsAllowAll) -> Self {
-        value
-            .0
-            .then_some(Self::very_permissive())
+impl Config {
+    /// Return either very permissive [`CORS`](`CorsLayer`) configuration
+    /// or empty one based on `cors_allow_all` field
+    pub fn get_cors_configuration(&self) -> CorsLayer {
+        self.cors_allow_all
+            .then_some(CorsLayer::very_permissive())
             .unwrap_or_default()
     }
 }
@@ -96,19 +62,39 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             address: SocketAddr::from(([0, 0, 0, 0], 7000)),
-            cors_allow_all: CorsAllowAll::default(),
-            request_timeout: Timeout::default(),
+            cors_allow_all: default_cors(),
+            request_timeout: default_timeout(),
             logger: LoggerConfig::default(),
         }
     }
+}
+
+const fn tracing_default() -> tracing::Level {
+    tracing::Level::INFO
+}
+
+const fn default_cors() -> bool {
+    false
+}
+
+const fn default_timeout() -> Duration {
+    Duration::from_millis(5000)
+}
+
+const fn default_log_amount() -> usize {
+    5
+}
+
+const fn default_log_size() -> u64 {
+    10u64.pow(6)
 }
 
 impl Default for LoggerConfig {
     fn default() -> Self {
         Self {
             log_file: None,
-            log_amount: LogAmount::default(),
-            log_size: LogSize::default(),
+            log_amount: default_log_amount(),
+            log_size: default_log_size(),
             trace_level: tracing::Level::INFO,
         }
     }

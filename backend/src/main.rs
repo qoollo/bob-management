@@ -16,15 +16,12 @@ async fn main() -> Result<(), InitServerError> {
         Report::new(InitServerError).attach_printable(format!("couldn't get config file: {e}"))
     })?;
 
-    let logger: cli::LoggerConfig = cli::Args::parse().try_into().map_err(|e| {
-        Report::new(InitServerError)
-            .attach_printable(format!("couldn't get logger configuration file: {e}"))
-    })?;
+    let logger = &config.logger;
 
     init_tracer(&logger.log_file, logger.trace_level);
     tracing::info!("Logger: {logger:?}");
 
-    let cors: CorsLayer = config.cors_allow_all.clone().into();
+    let cors: CorsLayer = config.get_cors_configuration();
     tracing::info!("CORS: {cors:?}");
 
     let addr = config.address;
