@@ -1,4 +1,5 @@
 #![allow(clippy::module_name_repetitions)]
+
 use axum::response::{IntoResponse, Response};
 use hyper::StatusCode;
 use thiserror::Error;

@@ -8,6 +8,9 @@ edition.workspace = true
 readme.workspace = true
 repository.workspace = true
 
+[build-dependencies]
+chrono = "0.4"
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
