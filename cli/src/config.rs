@@ -48,7 +48,6 @@ pub struct LoggerConfig {
     pub trace_level: tracing::Level,
 }
 
-
 impl Default for Config {
     fn default() -> Self {
         Self {
