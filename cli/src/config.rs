@@ -118,4 +118,3 @@ pub enum Error {
 }
 
 impl FromFile for Config {}
-

@@ -29,7 +29,7 @@ error-stack = "0.4"
 thiserror = "1.0"
 
 ## General
-tokio = { version = "1.32", features = ["rt", "macros", "rt-multi-thread"] }
+tokio = { version = "1.32", features = ["rt", "macros", "rt-multi-thread" ] }
 hyper = "0.14"
 
 ## OpenAPI + Swagger
