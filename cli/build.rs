@@ -1,29 +1,36 @@
-use std::process::Command;
-#[allow(clippy::unwrap_used)]
+use std::process::{Command, ExitStatus};
+
 fn main() {
-    let output = Command::new("git")
-        .args(["rev-parse", "HEAD"])
-        .output()
-        .unwrap();
-    let git_hash = String::from_utf8(output.stdout).unwrap();
-    println!("cargo:rustc-env=GIT_HASH={git_hash}");
+    set_env("GIT_HASH", "git", &["rev-parse", "HEAD"]);
 
-    let output = Command::new("git")
-        .args(["rev-parse", "--abbrev-ref", "HEAD"])
-        .output()
-        .unwrap();
-    let git_branch = String::from_utf8(output.stdout).unwrap();
-    println!("cargo:rustc-env=GIT_BRANCH={git_branch}");
+    if !set_env(
+        "GUI_BUILD_BRANCH_TAG",
+        "git",
+        &["describe", "--tags", "--abbrev=0"],
+    )
+    .success()
+    {
+        set_env(
+            "GUI_BUILD_BRANCH_TAG",
+            "git",
+            &["rev-parse", "--abbrev-ref", "HEAD"],
+        );
+    }
 
-    let mut command = Command::new("git");
-    command.args(["describe", "--tags", "--abbrev=0"]);
+    println!("cargo:rerun-if-changed=../backend");
+}
+
+#[allow(clippy::unwrap_used)]
+fn set_env(env_var: &str, cmd: &str, args: &[&str]) -> ExitStatus {
+    let mut command = Command::new(cmd);
+    command.args(args);
     let output = command.output().unwrap();
-    let git_tag = if command.status().unwrap().success() {
-        String::from_utf8(output.stdout).unwrap()
-    } else {
-        String::from("NOTAG")
+    if command.status().unwrap().success() {
+        println!(
+            "cargo:rustc-env={env_var}={}",
+            String::from_utf8(output.stdout).unwrap()
+        );
     };
-    println!("cargo:rustc-env=GIT_TAG={git_tag}");
 
-    println!("cargo:rustc-env=BUILD_TIME={:?}", chrono::Utc::now());
+    command.status().unwrap()
 }

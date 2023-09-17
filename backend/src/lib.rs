@@ -4,6 +4,7 @@
 use axum::Router;
 #[cfg(feature = "swagger")]
 use utoipa::OpenApi;
+pub mod config;
 pub mod connector;
 pub mod error;
 pub mod models;
@@ -52,7 +53,7 @@ pub fn openapi_doc() -> Router {
 
 pub mod prelude {
     #![allow(unused_imports)]
-    pub use crate::error::{APIError, InitServerError, InternalAppError};
+    pub use crate::error::{InitServerError, InternalAppError};
     pub use axum::response::Result as AxumResult;
     pub use error_stack::{Context, Report, Result, ResultExt};
 }

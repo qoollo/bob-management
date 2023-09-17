@@ -1,6 +1,7 @@
 [package]
 name = "bob_management"
 version.workspace = true
+default-run = "backend"
 edition = "2021"
 description = "Bob Management GUI"
 authors = ["Romanov Simeon ArchArcheoss@proton.me"]
@@ -19,6 +20,11 @@ name = "frontend"
 path = "frontend/build.rs"
 required-features = [ "frontend" ]
 
+[[bin]]
+name = "backend"
+path = "backend/src/main.rs"
+required-features = [ "backend" ]
+
 [build-dependencies]
 # Frontend
 tsync = { version = "2", optional = true }
@@ -33,14 +39,24 @@ cli = { path = "./cli", optional = true }
 # Backend Lib
 backend = { path = "./backend", optional = true }
 
+# Backend main deps.
+tokio = { version = "1.32", features = ["rt", "macros", "rt-multi-thread"], optional = true }
+error-stack = { version = "0.4.1", optional = true }
+axum = { version = "0.6", optional = true }
+tower = { version = "0.4", optional = true }
+tower-http = { version = "0.4", features = ["cors"], optional = true } 
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", optional = true }
+
 [workspace]
 members = [ "cli", "backend" ]
-default-members = [ "backend" ]
 
 [features]
-default = [ "frontend", "swagger" ] 
-frontend = [ "tsync" ]
-swagger = [ "backend/swagger" ]
+# default = [ "frontend", "swagger" ] 
+default = [ "frontend", "swagger", "backend" ] 
+frontend = [ "dep:tsync" ]
+backend = [ "dep:backend", "dep:axum", "dep:tracing", "dep:tracing-subscriber", "dep:tower-http", "dep:tower", "dep:error-stack", "dep:tokio", "dep:cli" ]
+swagger = [ "backend?/swagger" ]
 
 [profile.dev]
 debug-assertions = true

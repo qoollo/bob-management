@@ -1,9 +1,9 @@
 #![allow(clippy::multiple_crate_versions)]
 
 use axum::{routing::get, Router};
-use backend::{prelude::*, root, services::api_router};
+use backend::{config::ConfigExt, prelude::*, root, services::api_router};
 use cli::Parser;
-use error_stack::Report;
+use error_stack::{Report, Result, ResultExt};
 use std::path::PathBuf;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
@@ -12,9 +12,9 @@ use tracing::Level;
 #[tokio::main]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 async fn main() -> Result<(), InitServerError> {
-    let config: cli::Config = cli::Args::parse().try_into().map_err(|e| {
-        Report::new(InitServerError).attach_printable(format!("couldn't get config file: {e}"))
-    })?;
+    let config: cli::Config = cli::Config::try_from(cli::Args::parse())
+        .attach_printable(format!("couldn't get config file."))
+        .change_context(InitServerError)?;
 
     let logger = &config.logger;
 

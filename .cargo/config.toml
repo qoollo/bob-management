@@ -1,7 +1,7 @@
 [alias]
-backend="build --no-default-features"
-frontend="run -p bob_management --bin frontend --features frontend --no-default-features"
-swagger="run --features swagger -- --default"
+build-backend="build --features backend swagger --no-default-features"
+build-frontend="build -p bob_management --bin frontend --features frontend --no-default-features"
+run-backend="run --features backend swagger --no-default-features"
 
 # [build]
 # target-dir=".cargo/.build"
