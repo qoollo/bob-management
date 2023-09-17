@@ -25,4 +25,3 @@ clap = { version = "4.4", features = ["derive", "cargo"] }
 # Meta-info
 build-time = "0.1"
 lazy_static="1.4"
-
