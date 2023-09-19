@@ -14,35 +14,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo build-backend
   build-frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo build-frontend
   build-all:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo build
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo test
   fmt-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo fmt --all -- --check
   clippy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo clippy
