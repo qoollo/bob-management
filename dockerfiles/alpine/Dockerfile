@@ -15,18 +15,26 @@ RUN apt-get update \
 
 
 # RUN USER=root cargo new --bin bob-management
-COPY ./Cargo.toml ./Cargo.toml
-COPY ./build.rs ./build.rs
-COPY ./cli ./cli
-COPY ./backend ./backend
-COPY ./.cargo ./.cargo
-RUN cargo backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET
+RUN mkdir -p backend/src frontend cli/src
+RUN mkdir target
+COPY Cargo.toml Cargo.toml
+COPY cli/Cargo.toml cli/Cargo.toml
+COPY backend/Cargo.toml backend/Cargo.toml
+COPY frontend/Cargo.toml frontend/Cargo.toml
+COPY .cargo .cargo
+RUN echo "fn main() {println!(\"if you see this, the build broke\")}" > backend/src/lib.rs \
+  && echo "fn main() {println!(\"if you see this, the build broke\")}" > backend/src/main.rs \
+  && echo "fn main() {println!(\"if you see this, the build broke\")}" > frontend/build.rs \
+  && echo "fn main() {println!(\"if you see this, the build broke\")}" > cli/src/lib.rs \
+  && echo "fn main() {println!(\"if you see this, the build broke\")}" > build.rs \
+  && cargo build -p bob_management --features backend --no-default-features --profile=$BUILD_PROFILE --target=$BUILD_TARGET
 
 ADD . ./
 
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/home/root/app/target \
-    cargo backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET \
+RUN \
+    # --mount=type=cache,target=/usr/local/cargo/registry \
+    # --mount=type=cache,target=/home/root/app/target \
+    cargo build -p bob_management --features backend --no-default-features --profile=$BUILD_PROFILE --target=$BUILD_TARGET \
     && mkdir /build_output \ 
     && cp -f target/$BUILD_TARGET/$BUILD_PROFILE/backend /build_output/backend 
 
@@ -40,7 +48,7 @@ FROM alpine:3.18
 ARG APP=/usr/src/app
 ENV TZ=Etc/UTC \
     APP_USER=appuser
-
+ENV PATH="$PATH:${APP}"
 RUN addgroup -S $APP_USER \
     && adduser -S -g $APP_USER $APP_USER \
     && apk update \
@@ -49,11 +57,11 @@ RUN addgroup -S $APP_USER \
 
 EXPOSE 9000
 
-COPY --from=backend --chown=$APP_USER:$APP_USER /build_output/backend ${APP}/backend/backend
-COPY --from=frontend --chown=$APP_USER:$APP_USER /frontend/dist ${APP}/frontend
+COPY --from=backend --chown=$APP_USER:$APP_USER /build_output/backend ${APP}/backend
+COPY --from=frontend --chown=$APP_USER:$APP_USER /frontend/dist ${APP}/dist
 
 USER $APP_USER
 WORKDIR ${APP}
 
-CMD ["./backend/backend"]
+ENTRYPOINT ["./backend"]
 
