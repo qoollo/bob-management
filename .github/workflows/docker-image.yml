@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
       - name: Set Bob GUI version
-        uses: dtolnay/rust-toolchain@stable
         run: echo "VERSION=$(cargo metadata --format-version=1 --no-deps | jq '.packages[0].version' --raw-output)" >> $GITHUB_ENV
       - name: Build alpine image
         uses: docker/build-push-action@v5
