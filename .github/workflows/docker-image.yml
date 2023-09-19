@@ -1,15 +1,19 @@
-name: Docker Image CI
+name: build-docker
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: docker build . --file dockerfiles/alpine/Dockerfile --tag bob-gui:$(date +%s)
+      - uses: actions/checkout@v3
+      - name: Build alpine image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: dockerfiles/alpine/Dockerfile
+          tags: bob-gui:$(date +%s)
