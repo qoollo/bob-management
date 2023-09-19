@@ -60,4 +60,3 @@ fn main() {
     build_types();
     build_frontend();
 }
-
