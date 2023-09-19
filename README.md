@@ -4,17 +4,9 @@ Management UI for Bob
 
 ## Commands
 
-To run dev. server:
-
-```sh
-cargo fullstack --features=dev
-```
-
-This will run dev. server on 21012 port for frontend and backend server on port 9000.
-
 ---
 
-Run debug build: 
+Run debug build:
 
 ```sh
 cargo run -- --default
