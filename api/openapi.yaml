@@ -6,7 +6,7 @@ info:
     name: Romanov Simeon ArchArcheoss@proton.me
   license:
     name: Unlicense
-  version: 0.1.0
+  version: 0.0.0
 paths:
   /:
     get:
