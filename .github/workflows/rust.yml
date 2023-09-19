@@ -1,44 +1,48 @@
 name: CI
 
-on: [push]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  push:
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ci:
+  build-backend:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - beta
-          - nightly
-          
     steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: rustfmt, clippy
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
- 
+      - uses: actions/checkout@v4
+      - uses: actions-rs/rust-toolchain@stable
+      - run: cargo build-backend
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/rust-toolchain@stable
+      - run: cargo build-frontend
+  build-all:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/rust-toolchain@stable
+      - run: cargo build
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/rust-toolchain@stable
+      - run: cargo test
+  fmt-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/rust-toolchain@stable
+      - run: cargo fmt --all -- --check
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/rust-toolchain@stable
+      - run: cargo clippy
