@@ -1,10 +1,10 @@
-use std::fs::File;
-use std::path::PathBuf;
 ///
 /// Build Script
 /// This is run as a pre-build step -- before the rust backend is compiled.
 /// NOTE: Should be included in root's build script
 ///
+use std::fs::File;
+use std::path::PathBuf;
 use std::{io::Write, process::Command};
 
 /*
@@ -35,10 +35,12 @@ fn shell(command: &str) {
 }
 
 pub fn build_types() {
-    let dir = env!("CARGO_MANIFEST_DIR");
+    let mut inputs = vec![PathBuf::from(env!("CARGO_MANIFEST_DIR"))];
+    let mut output = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    inputs[0].pop();
 
-    let inputs = vec![PathBuf::from_iter([dir, "backend"])];
-    let output = PathBuf::from_iter([dir, "frontend/src/types/rust.d.ts"]);
+    inputs[0].push("backend");
+    output.push("src/types/rust.d.ts");
 
     tsync::generate_typescript_defs(inputs, output, false);
 }
@@ -46,13 +48,16 @@ pub fn build_types() {
 pub fn build_frontend() {
     // Only install frontend dependencies when building release
     // #[cfg(not(debug_assertions))]
-    shell("cd frontend && npm install --frozen-lockfile");
+    shell("npm install --frozen-lockfile");
 
     // Only build frontend when building a release
     #[cfg(not(debug_assertions))]
-    shell("cd frontend && npm build");
+    shell("npm build");
 }
 
 // HACK: Dummy main to run with `cargo frontend` command
 #[allow(dead_code)]
-fn main() {}
+fn main() {
+    build_types();
+    build_frontend();
+}

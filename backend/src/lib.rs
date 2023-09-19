@@ -53,7 +53,7 @@ pub fn openapi_doc() -> Router {
 
 pub mod prelude {
     #![allow(unused_imports)]
-    pub use crate::error::{InitServerError, InternalAppError};
+    pub use crate::error::AppError;
     pub use axum::response::Result as AxumResult;
     pub use error_stack::{Context, Report, Result, ResultExt};
 }

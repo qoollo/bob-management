@@ -1,0 +1,16 @@
+[package]
+name = "frontend"
+edition = "2021"
+version.workspace = true
+build = "build.rs"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "frontend"
+path = "build.rs"
+
+[build-dependencies]
+tsync = "2"
+
+[dependencies]
+tsync = "2"

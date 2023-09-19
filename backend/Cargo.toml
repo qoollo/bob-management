@@ -1,15 +1,15 @@
 [package]
 name = "backend"
-version = "0.1.0"
-default-run = "backend"
 edition = "2021"
+version.workspace = true
 description = "Bob Management GUI: Backend"
-authors = ["Romanov Simeon ArchArcheoss@proton.me", "Artemev Ilia", "Riadinskii Kirill"]
+authors = ["Romanov Simeon ArchArcheoss@proton.me"]
 license = "Unlicense"
 repository = "https://github.com/qoollo/bob-management"
 publish = false
 keywords = [ "BOB", "Management", "GUI" ]
 readme = "./README.md"
+autobins = false
 
 [dependencies]
 # Backend (lib.rs)

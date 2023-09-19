@@ -3,7 +3,7 @@
 use axum::{routing::get, Router};
 use backend::{config::ConfigExt, prelude::*, root, services::api_router};
 use cli::Parser;
-use error_stack::{Report, Result, ResultExt};
+use error_stack::{Result, ResultExt};
 use std::path::PathBuf;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
@@ -11,10 +11,10 @@ use tracing::Level;
 
 #[tokio::main]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
-async fn main() -> Result<(), InitServerError> {
-    let config: cli::Config = cli::Config::try_from(cli::Args::parse())
-        .attach_printable(format!("couldn't get config file."))
-        .change_context(InitServerError)?;
+async fn main() -> Result<(), AppError> {
+    let config = cli::Config::try_from(cli::Args::parse())
+        .attach_printable(format!("Couldn't get config file."))
+        .change_context(AppError::InitializationError)?;
 
     let logger = &config.logger;
 
@@ -25,7 +25,7 @@ async fn main() -> Result<(), InitServerError> {
     tracing::info!("CORS: {cors:?}");
 
     let addr = config.address;
-    tracing::info!("listening on {addr}");
+    tracing::info!("Listening on {addr}");
 
     let app = router(cors);
     #[cfg(feature = "swagger")]
@@ -34,10 +34,8 @@ async fn main() -> Result<(), InitServerError> {
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
-        .map_err(|e| {
-            Report::new(InitServerError)
-                .attach_printable(format!("failed to start axum server: {e}"))
-        })?;
+        .attach_printable(format!("Failed to start axum server"))
+        .change_context(AppError::StartUpError)?;
 
     Ok(())
 }

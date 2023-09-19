@@ -2,7 +2,6 @@ use error_stack::{Context, Result, ResultExt};
 use serde::{de::DeserializeOwned, Deserialize};
 use serde_with::{serde_as, DisplayFromStr};
 use std::{fmt::Display, fs::File, io::BufReader, net::SocketAddr, path::PathBuf, time::Duration};
-use tower_http::cors::CorsLayer;
 
 /// Server Configuration passed on initialization
 #[derive(Clone, Debug, Deserialize)]

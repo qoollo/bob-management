@@ -14,32 +14,19 @@ readme = "./README.md"
 [workspace.package]
 version = "0.0.0"   # Bob GUI version
 
-# Force frontend build
-[[bin]]
-name = "frontend"
-path = "frontend/build.rs"
-required-features = [ "frontend" ]
-
 [[bin]]
 name = "backend"
 path = "backend/src/main.rs"
 required-features = [ "backend" ]
 
-[build-dependencies]
-# Frontend
-tsync = { version = "2", optional = true }
-
 [dependencies]
-# Frontend (for `cargo frontend` command to force frontend rebuild)
-tsync = { version = "2", optional = true }
-
 # CLI
 cli = { path = "./cli", optional = true }
 
 # Backend Lib
 backend = { path = "./backend", optional = true }
 
-# Backend main deps.
+# Backend `main.rs` deps.
 tokio = { version = "1.32", features = ["rt", "macros", "rt-multi-thread"], optional = true }
 error-stack = { version = "0.4.1", optional = true }
 axum = { version = "0.6", optional = true }
@@ -49,14 +36,13 @@ tracing = { version = "0.1", optional = true }
 tracing-subscriber = { version = "0.3", optional = true }
 
 [workspace]
-members = [ "cli", "backend" ]
+members = [ "cli", "backend", "frontend" ]
+default-members = [ "backend", "frontend", "./" ]
 
 [features]
-# default = [ "frontend", "swagger" ] 
-default = [ "frontend", "swagger", "backend" ] 
-frontend = [ "dep:tsync" ]
+default = [ "swagger", "backend" ] 
 backend = [ "dep:backend", "dep:axum", "dep:tracing", "dep:tracing-subscriber", "dep:tower-http", "dep:tower", "dep:error-stack", "dep:tokio", "dep:cli" ]
-swagger = [ "backend?/swagger" ]
+swagger = [ "backend/swagger" ]
 
 [profile.dev]
 debug-assertions = true
