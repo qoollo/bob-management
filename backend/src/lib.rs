@@ -35,8 +35,6 @@ pub struct ApiDoc;
 pub async fn root() -> &'static str {
     "Hello Bob!"
 }
-
-
 /// Generate openapi documentation for the project
 #[cfg(all(feature = "swagger", debug_assertions))]
 pub fn openapi_doc() -> Router {
