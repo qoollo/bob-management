@@ -11,9 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Set Bob GUI version
+        uses: dtolnay/rust-toolchain@stable
+        run: echo "VERSION=$(cargo metadata --format-version=1 --no-deps | jq '.packages[0].version' --raw-output)" >> $GITHUB_ENV
       - name: Build alpine image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: dockerfiles/alpine/Dockerfile
-          tags: bob-gui:$(date +%s)
+          tags: bob-gui:$VERSION
