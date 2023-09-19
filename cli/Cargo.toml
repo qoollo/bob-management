@@ -8,10 +8,6 @@ edition.workspace = true
 readme.workspace = true
 repository.workspace = true
 
-[build-dependencies]
-#Proc-macro
-build-time = "0.1"
-
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
