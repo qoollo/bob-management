@@ -1,7 +1,10 @@
 name: update-api-schema
 
-on: [push]
-
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  push:
+    branches: [main]
 jobs:
   gen-openapi:
     runs-on: ubuntu-latest
