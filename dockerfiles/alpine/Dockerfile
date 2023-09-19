@@ -27,14 +27,14 @@ RUN echo "fn main() {println!(\"if you see this, the build broke\")}" > backend/
   && echo "fn main() {println!(\"if you see this, the build broke\")}" > frontend/build.rs \
   && echo "fn main() {println!(\"if you see this, the build broke\")}" > cli/src/lib.rs \
   && echo "fn main() {println!(\"if you see this, the build broke\")}" > build.rs \
-  && cargo build -p bob_management --features backend --no-default-features --profile=$BUILD_PROFILE --target=$BUILD_TARGET
+  && cargo build-backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET
 
 ADD . ./
 
 RUN \
     # --mount=type=cache,target=/usr/local/cargo/registry \
     # --mount=type=cache,target=/home/root/app/target \
-    cargo build -p bob_management --features backend --no-default-features --profile=$BUILD_PROFILE --target=$BUILD_TARGET \
+    cargo build-backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET \
     && mkdir /build_output \ 
     && cp -f target/$BUILD_TARGET/$BUILD_PROFILE/backend /build_output/backend 
 
