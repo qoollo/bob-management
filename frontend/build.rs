@@ -55,8 +55,6 @@ pub fn build_frontend() {
     shell("npm build");
 }
 
-// HACK: Dummy main to run with `cargo frontend` command
-#[allow(dead_code)]
 fn main() {
     build_types();
     build_frontend();

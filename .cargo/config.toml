@@ -3,5 +3,3 @@ build-backend="build -p bob_management --features backend --features swagger --n
 build-frontend="build -p frontend --bin frontend --no-default-features" 
 run-backend="run -p bob_management --features backend --features swagger --no-default-features"
 
-# [build]
-# target-dir=".cargo/.build"
