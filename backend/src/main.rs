@@ -28,7 +28,7 @@ async fn main() -> Result<(), AppError> {
 
     let logger = &config.logger;
 
-    init_tracer(&logger.log_file, logger.trace_level);
+    // init_tracer(logger.clone(), logger.trace_level);
     tracing::info!("Logger: {logger:?}");
 
     let cors: CorsLayer = config.get_cors_configuration();
@@ -50,10 +50,12 @@ async fn main() -> Result<(), AppError> {
     Ok(())
 }
 
-fn init_tracer(_log_file: &Option<PathBuf>, trace_level: Level) {
-    let subscriber = tracing_subscriber::fmt().with_max_level(trace_level);
-    subscriber.init();
-}
+// fn init_tracer(log_file: LoggerConfig, trace_level: Level) {
+//     let handle = log_file.get_tracing_appender().unwrap();
+//     // let sub = tracing_subscriber::registry().
+//     let subscriber = tracing_subscriber::fmt().with_max_level(trace_level);
+//     subscriber.init();
+// }
 
 fn router(cors: CorsLayer) -> Router {
     let mut frontend = env::current_exe().expect("Couldn't get current executable path.");

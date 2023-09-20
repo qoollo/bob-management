@@ -31,14 +31,14 @@ pub struct Config {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct LoggerConfig {
-    /// [Stub] File to save logs
+    /// File to save logs
     pub log_file: Option<PathBuf>,
 
-    /// [Stub] Number of log files
+    /// Number of log files
     #[serde(default = "LoggerConfig::default_log_amount")]
     pub log_amount: usize,
 
-    /// [Stub] Max size of a single log file, in bytes
+    /// Max size of a single log file, in bytes
     #[serde(default = "LoggerConfig::default_log_size")]
     pub log_size: u64,
 
