@@ -14,7 +14,6 @@ serde_yaml = "0.9"
 serde_with = "3.3"
 humantime-serde = "1.1"
 tracing = "0.1"
-tracing-appender = "0.2"
 
 # Error Handling
 error-stack = "0.4"
