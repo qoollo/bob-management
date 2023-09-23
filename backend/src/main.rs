@@ -13,13 +13,12 @@ use bob_management::{
     services::api_router_v1,
     ApiDoc,
 };
-use cli::{LoggerConfig, Parser};
+use cli::Parser;
 use error_stack::{Result, ResultExt};
 use hyper::Method;
 use std::env;
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
-use tracing_appender::non_blocking::WorkerGuard;
 
 const FRONTEND_FOLDER: &str = "frontend";
 
@@ -31,7 +30,7 @@ async fn main() -> Result<(), AppError> {
 
     let logger = &config.logger;
 
-    let _guard = init_tracer(logger);
+    let _guard = logger.init_logger().unwrap();
     tracing::info!("Logger: {logger:?}");
 
     let cors: CorsLayer = config.get_cors_configuration();
@@ -51,10 +50,6 @@ async fn main() -> Result<(), AppError> {
         .attach_printable("Failed to start axum server")?;
 
     Ok(())
-}
-
-fn init_tracer(log_file: &LoggerConfig) -> Vec<WorkerGuard> {
-    log_file.init_logger().unwrap()
 }
 
 fn router(cors: CorsLayer) -> Router {
