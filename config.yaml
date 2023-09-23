@@ -1,3 +1,7 @@
 address: 0.0.0.0:9000
 logger:
-  trace-level: INFO
+  file:
+    trace-level: ~
+    log-file: /tmp/bob.log
+  stdout:
+    trace-level: INFO

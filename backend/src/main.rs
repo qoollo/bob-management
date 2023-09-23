@@ -1,26 +1,29 @@
-#![allow(clippy::multiple_crate_versions)]
+#![allow(
+    clippy::multiple_crate_versions,
+    clippy::unwrap_used,
+    clippy::expect_used
+)]
 
 use axum::Router;
 use bob_management::{
-    config::ConfigExt,
+    config::{ConfigExt, LoggerExt},
     prelude::*,
     root,
     router::{ApiV1, ApiVersion, NoApi, RouterApiExt},
     services::api_router_v1,
     ApiDoc,
 };
-use cli::Parser;
+use cli::{LoggerConfig, Parser};
 use error_stack::{Result, ResultExt};
 use hyper::Method;
-use std::{env, path::PathBuf};
+use std::env;
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
-use tracing::Level;
+use tracing_appender::non_blocking::WorkerGuard;
 
 const FRONTEND_FOLDER: &str = "frontend";
 
 #[tokio::main]
-#[allow(clippy::unwrap_used, clippy::expect_used)]
 async fn main() -> Result<(), AppError> {
     let config = cli::Config::try_from(cli::Args::parse())
         .change_context(AppError::InitializationError)
@@ -28,7 +31,7 @@ async fn main() -> Result<(), AppError> {
 
     let logger = &config.logger;
 
-    // init_tracer(logger.clone(), logger.trace_level);
+    let _guard = init_tracer(logger);
     tracing::info!("Logger: {logger:?}");
 
     let cors: CorsLayer = config.get_cors_configuration();
@@ -50,12 +53,9 @@ async fn main() -> Result<(), AppError> {
     Ok(())
 }
 
-// fn init_tracer(log_file: LoggerConfig, trace_level: Level) {
-//     let handle = log_file.get_tracing_appender().unwrap();
-//     // let sub = tracing_subscriber::registry().
-//     let subscriber = tracing_subscriber::fmt().with_max_level(trace_level);
-//     subscriber.init();
-// }
+fn init_tracer(log_file: &LoggerConfig) -> Vec<WorkerGuard> {
+    log_file.init_logger().unwrap()
+}
 
 fn router(cors: CorsLayer) -> Router {
     let mut frontend = env::current_exe().expect("Couldn't get current executable path.");

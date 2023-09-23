@@ -1,20 +1,13 @@
 use cli::{Config, LoggerConfig};
-use log4rs::{
-    append::rolling_file::{
-        policy::compound::{
-            roll::{delete::DeleteRoller, fixed_window::FixedWindowRoller},
-            trigger::size::SizeTrigger,
-            CompoundPolicy,
-        },
-        RollingFileAppender, RollingFileAppenderBuilder,
-    },
-    config::{Appender, Root},
-    encode::pattern::PatternEncoder,
-    filter::threshold::ThresholdFilter,
-    Handle,
-};
+use core::fmt;
+use error_stack::Context;
+use file_rotate::{suffix::AppendTimestamp, ContentLimit, FileRotate};
+use std::fmt::Display;
 use tower_http::cors::CorsLayer;
+use tracing_appender::non_blocking::WorkerGuard;
+use tracing_subscriber::{filter::LevelFilter, prelude::*};
 
+#[allow(clippy::module_name_repetitions)]
 pub trait ConfigExt {
     /// Return either very permissive [`CORS`](`CorsLayer`) configuration
     /// or empty one based on `cors_allow_all` field
@@ -22,8 +15,22 @@ pub trait ConfigExt {
 }
 
 pub trait LoggerExt {
-    /// Return [`tracing_appender`] instance based on [`LoggerConfig`]'s `rotation_frequency` field
-    fn get_tracing_appender(&self) -> Result<Handle, LoggerError>;
+    /// Initialize logger.
+    ///
+    /// Returns [`WorkerGuard`]s for off-thread writers.
+    /// Should not be dropped.
+    ///
+    /// # Errors
+    ///
+    /// Function returns error if `init_file_rotate` fails
+    fn init_logger(&self) -> Result<Vec<WorkerGuard>, LoggerError>;
+
+    /// Returns [`std:io::Write`] object that rotates files on write
+    ///
+    /// # Errors
+    ///
+    /// Function returns error if `log_file` is not specified
+    fn init_file_rotate(&self) -> Result<FileRotate<AppendTimestamp>, LoggerError>;
 }
 
 impl ConfigExt for Config {
@@ -33,44 +40,74 @@ impl ConfigExt for Config {
             .unwrap_or_default()
     }
 }
+
 impl LoggerExt for LoggerConfig {
-    fn get_tracing_appender(&self) -> Result<Handle, LoggerError> {
-        // let logfile = RollingFileAppender::builder().build(self.log_file, CompoundPolicy::new(SizeTrigger::new(self.log_size), DeleteRoller::new()));
-        // let config = log4rs::Config::builder().appender(Appender::builder().)
-        let window_size = 3; // log0, log1, log2
-        let fixed_window_roller = FixedWindowRoller::builder()
-            .build("log{}", window_size)
-            .unwrap();
-        let size_limit = 5 * 1024; // 5KB as max log file size to roll
-        let size_trigger = SizeTrigger::new(size_limit);
-        let compound_policy =
-            CompoundPolicy::new(Box::new(size_trigger), Box::new(fixed_window_roller));
-        let config = log4rs::Config::builder()
-            .appender(
-                Appender::builder()
-                    .filter(Box::new(ThresholdFilter::new(log::LevelFilter::Debug)))
-                    .build(
-                        "logfile",
-                        Box::new(
-                            RollingFileAppender::builder()
-                                .encoder(Box::new(PatternEncoder::new("{d} {l}::{m}{n}")))
-                                .build("logfile", Box::new(compound_policy))
-                                .unwrap(),
-                        ),
+    fn init_logger(&self) -> Result<Vec<WorkerGuard>, LoggerError> {
+        let (file_writer, file_guard) = if self.file.trace_level.is_some() {
+            tracing_appender::non_blocking(self.init_file_rotate()?)
+        } else {
+            tracing_appender::non_blocking(std::io::sink())
+        };
+        let (std_out_writer, stdout_guard) = tracing_appender::non_blocking(std::io::stdout());
+        let (std_err_writer, stderr_guard) = tracing_appender::non_blocking(std::io::stderr());
+
+        tracing_subscriber::registry()
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(file_writer)
+                    .with_filter(
+                        self.file
+                            .trace_level
+                            .map_or(LevelFilter::OFF, LevelFilter::from_level),
                     ),
             )
-            .build(
-                Root::builder()
-                    .appender("logfile")
-                    .build(log::LevelFilter::Debug),
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(std_out_writer)
+                    .with_filter(
+                        self.stdout
+                            .trace_level
+                            .map_or(LevelFilter::OFF, LevelFilter::from_level),
+                    ),
             )
-            .unwrap();
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(std_err_writer)
+                    .with_filter(
+                        self.stderr
+                            .trace_level
+                            .map_or(LevelFilter::OFF, LevelFilter::from_level),
+                    ),
+            )
+            .init();
 
-        Ok(log4rs::init_config(config).unwrap())
+        Ok(vec![file_guard, stdout_guard, stderr_guard])
+    }
+
+    fn init_file_rotate(&self) -> Result<FileRotate<AppendTimestamp>, LoggerError> {
+        Ok(FileRotate::new(
+            self.file.log_file.as_ref().ok_or(LoggerError::NoFileName)?,
+            AppendTimestamp::default(file_rotate::suffix::FileLimit::MaxFiles(
+                self.file.log_amount,
+            )),
+            ContentLimit::BytesSurpassed(self.file.log_size),
+            file_rotate::compression::Compression::OnRotate(1),
+            None,
+        ))
     }
 }
 
 #[derive(Debug)]
 pub enum LoggerError {
-    InitError,
+    NoFileName,
 }
+
+impl Display for LoggerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::NoFileName => "No filename specified",
+        })
+    }
+}
+
+impl Context for LoggerError {}
