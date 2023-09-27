@@ -43,54 +43,44 @@ impl ConfigExt for Config {
 
 impl LoggerExt for LoggerConfig {
     fn init_logger(&self) -> Result<Vec<WorkerGuard>, LoggerError> {
-        let (file_writer, file_guard) = if self.file.trace_level.is_some() {
-            tracing_appender::non_blocking(self.init_file_rotate()?)
+        let mut guards = Vec::with_capacity(2);
+        let file_writer = if self.file.is_some() {
+            let (writer, guard) = tracing_appender::non_blocking(self.init_file_rotate()?);
+            guards.push(guard);
+            writer
         } else {
-            tracing_appender::non_blocking(std::io::sink())
+            tracing_appender::non_blocking(std::io::sink()).0
         };
-        let (std_out_writer, stdout_guard) = tracing_appender::non_blocking(std::io::stdout());
-        let (std_err_writer, stderr_guard) = tracing_appender::non_blocking(std::io::stderr());
+        let std_out_writer = if self.stdout.is_some() {
+            let (writer, guard) = tracing_appender::non_blocking(std::io::stdout());
+            guards.push(guard);
+            writer
+        } else {
+            tracing_appender::non_blocking(std::io::sink()).0
+        };
 
         tracing_subscriber::registry()
             .with(
                 tracing_subscriber::fmt::layer()
                     .with_writer(file_writer)
-                    .with_filter(
-                        self.file
-                            .trace_level
-                            .map_or(LevelFilter::OFF, LevelFilter::from_level),
-                    ),
+                    .with_filter(LevelFilter::from_level(self.trace_level)),
             )
             .with(
                 tracing_subscriber::fmt::layer()
                     .with_writer(std_out_writer)
-                    .with_filter(
-                        self.stdout
-                            .trace_level
-                            .map_or(LevelFilter::OFF, LevelFilter::from_level),
-                    ),
-            )
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .with_writer(std_err_writer)
-                    .with_filter(
-                        self.stderr
-                            .trace_level
-                            .map_or(LevelFilter::OFF, LevelFilter::from_level),
-                    ),
+                    .with_filter(LevelFilter::from_level(self.trace_level)),
             )
             .init();
 
-        Ok(vec![file_guard, stdout_guard, stderr_guard])
+        Ok(guards)
     }
 
     fn init_file_rotate(&self) -> Result<FileRotate<AppendTimestamp>, LoggerError> {
+        let config = self.file.as_ref().ok_or(LoggerError::EmptyConfig)?;
         Ok(FileRotate::new(
-            self.file.log_file.as_ref().ok_or(LoggerError::NoFileName)?,
-            AppendTimestamp::default(file_rotate::suffix::FileLimit::MaxFiles(
-                self.file.log_amount,
-            )),
-            ContentLimit::BytesSurpassed(self.file.log_size),
+            config.log_file.as_ref().ok_or(LoggerError::NoFileName)?,
+            AppendTimestamp::default(file_rotate::suffix::FileLimit::MaxFiles(config.log_amount)),
+            ContentLimit::BytesSurpassed(config.log_size),
             file_rotate::compression::Compression::OnRotate(1),
             None,
         ))
@@ -99,12 +89,14 @@ impl LoggerExt for LoggerConfig {
 
 #[derive(Debug)]
 pub enum LoggerError {
+    EmptyConfig,
     NoFileName,
 }
 
 impl Display for LoggerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::EmptyConfig => "Empty logger configuration",
             Self::NoFileName => "No filename specified",
         })
     }

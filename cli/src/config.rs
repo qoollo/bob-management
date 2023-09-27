@@ -26,20 +26,22 @@ pub struct Config {
 }
 
 /// Logger Configuration passed on initialization
-#[derive(Clone, Debug, Deserialize, Default)]
+#[serde_as]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct LoggerConfig {
     /// Rolling file logger config
     #[serde(default)]
-    pub file: FileLogger,
+    pub file: Option<FileLogger>,
 
     /// Stdout logger config
     #[serde(default)]
-    pub stdout: StdoutLogger,
+    pub stdout: Option<StdoutLogger>,
 
-    /// Stderr logger config
-    #[serde(default)]
-    pub stderr: StderrLogger,
+    /// Tracing Level
+    #[serde(default = "LoggerConfig::level_default")]
+    #[serde_as(as = "DisplayFromStr")]
+    pub trace_level: tracing::Level,
 }
 
 /// File Logger Configuration for writing logs to files
@@ -57,34 +59,13 @@ pub struct FileLogger {
     /// Max size of a single log file, in bytes
     #[serde(default = "FileLogger::default_log_size")]
     pub log_size: usize,
-
-    /// Tracing Level
-    #[serde(default = "FileLogger::level_default")]
-    #[serde_as(as = "Option<DisplayFromStr>")]
-    pub trace_level: Option<tracing::Level>,
 }
 
 /// Stdout Logger Configuration for printing logs into stdout
 #[serde_as]
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct StdoutLogger {
-    /// Tracing Level
-    #[serde(default = "StdoutLogger::level_default")]
-    #[serde_as(as = "Option<DisplayFromStr>")]
-    pub trace_level: Option<tracing::Level>,
-}
-
-/// Stdout Logger Configuration for printing logs into stderr
-#[serde_as]
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct StderrLogger {
-    /// Tracing Level
-    #[serde(default = "StderrLogger::level_default")]
-    #[serde_as(as = "Option<DisplayFromStr>")]
-    pub trace_level: Option<tracing::Level>,
-}
+pub struct StdoutLogger;
 
 impl Default for Config {
     fn default() -> Self {
@@ -93,6 +74,16 @@ impl Default for Config {
             cors_allow_all: Self::default_cors(),
             request_timeout: Self::default_timeout(),
             logger: LoggerConfig::default(),
+        }
+    }
+}
+
+impl Default for LoggerConfig {
+    fn default() -> Self {
+        Self {
+            file: None,
+            stdout: None,
+            trace_level: Self::level_default(),
         }
     }
 }
@@ -109,12 +100,14 @@ impl Config {
     }
 }
 
-impl FileLogger {
+impl LoggerConfig {
     #[must_use]
-    pub const fn level_default() -> Option<tracing::Level> {
-        Some(tracing::Level::TRACE)
+    pub const fn level_default() -> tracing::Level {
+        tracing::Level::TRACE
     }
+}
 
+impl FileLogger {
     #[must_use]
     pub const fn default_log_amount() -> usize {
         5
@@ -124,35 +117,10 @@ impl FileLogger {
     pub const fn default_log_size() -> usize {
         10usize.pow(6)
     }
-}
 
-impl StdoutLogger {
     #[must_use]
-    pub const fn level_default() -> Option<tracing::Level> {
-        Some(tracing::Level::INFO)
-    }
-}
-
-impl StderrLogger {
-    #[must_use]
-    pub const fn level_default() -> Option<tracing::Level> {
-        Some(tracing::Level::WARN)
-    }
-}
-
-impl Default for StderrLogger {
-    fn default() -> Self {
-        Self {
-            trace_level: Self::level_default(),
-        }
-    }
-}
-
-impl Default for StdoutLogger {
-    fn default() -> Self {
-        Self {
-            trace_level: Self::level_default(),
-        }
+    pub const fn enabled_default() -> bool {
+        false
     }
 }
 
@@ -162,7 +130,6 @@ impl Default for FileLogger {
             log_file: None,
             log_amount: Self::default_log_amount(),
             log_size: Self::default_log_size(),
-            trace_level: Self::level_default(),
         }
     }
 }
