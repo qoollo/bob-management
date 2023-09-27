@@ -1,7 +1,12 @@
 [package]
 name = "cli"
-edition = "2021"
+description = "Bob Management GUI: CLI"
 version.workspace = true
+authors.workspace = true
+license-file.workspace = true
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
