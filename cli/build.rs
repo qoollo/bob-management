@@ -1,21 +1,25 @@
 use std::process::{Command, ExitStatus};
 
 fn main() {
-    set_env("GIT_HASH", "git", &["rev-parse", "HEAD"]);
+    option_env!("BOBGUI_GIT_HASH")
+        .is_none()
+        .then(|| set_env("BOBGUI_GIT_HASH", "git", &["rev-parse", "HEAD"]));
 
-    if !set_env(
-        "GUI_BUILD_BRANCH_TAG",
-        "git",
-        &["describe", "--tags", "--abbrev=0"],
-    )
-    .success()
-    {
-        set_env(
-            "GUI_BUILD_BRANCH_TAG",
+    option_env!("BOBGUI_BUILD_BRANCH_TAG").is_none().then(|| {
+        if !set_env(
+            "BOBGUI_BUILD_BRANCH_TAG",
             "git",
-            &["rev-parse", "--abbrev-ref", "HEAD"],
-        );
-    }
+            &["describe", "--tags", "--abbrev=0"],
+        )
+        .success()
+        {
+            set_env(
+                "BOBGUI_BUILD_BRANCH_TAG",
+                "git",
+                &["rev-parse", "--abbrev-ref", "HEAD"],
+            );
+        }
+    });
 
     println!("cargo:rerun-if-changed=../backend");
 }

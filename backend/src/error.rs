@@ -1,27 +1,16 @@
 #![allow(clippy::module_name_repetitions)]
-use std::fmt;
-
 use axum::response::{IntoResponse, Response};
-use error_stack::Context;
 use hyper::StatusCode;
+use thiserror::Error;
 
 /// Server start up errors
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AppError {
+    #[error("Server initialization failed")]
     InitializationError,
+    #[error("Server start up failed")]
     StartUpError,
 }
-
-impl fmt::Display for AppError {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.write_str(match self {
-            Self::InitializationError => "Server initialization failed",
-            Self::StartUpError => "Server start up failed",
-        })
-    }
-}
-
-impl Context for AppError {}
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {

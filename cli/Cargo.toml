@@ -19,6 +19,7 @@ tracing = "0.1"
 
 # Error Handling
 error-stack = "0.4"
+thiserror = "1.0"
 
 # CLI
 clap = { version = "4.4", features = ["derive", "cargo"] }

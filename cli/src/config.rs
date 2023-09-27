@@ -1,7 +1,8 @@
-use error_stack::{Context, Result, ResultExt};
+use error_stack::{Result, ResultExt};
 use serde::{de::DeserializeOwned, Deserialize};
 use serde_with::{serde_as, DisplayFromStr};
-use std::{fmt::Display, fs::File, io::BufReader, net::SocketAddr, path::PathBuf, time::Duration};
+use std::{fs::File, io::BufReader, net::SocketAddr, path::PathBuf, time::Duration};
+use thiserror::Error;
 
 /// Server Configuration passed on initialization
 #[derive(Clone, Debug, Deserialize)]
@@ -110,18 +111,10 @@ pub trait FromFile {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum Error {
+    #[error("configuration error: couldn't read from file")]
     FromFile,
 }
 
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("configuration error: couldn't read from file")
-    }
-}
-
-impl Context for Error {}
-
 impl FromFile for Config {}
-impl FromFile for LoggerConfig {}

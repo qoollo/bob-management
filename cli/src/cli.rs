@@ -1,4 +1,4 @@
-use crate::config::{Config, FromFile, LoggerConfig};
+use crate::config::{Config, FromFile};
 use clap::{crate_authors, crate_version, Parser};
 use error_stack::ResultExt;
 pub use error_stack::{Context, Report};
@@ -13,8 +13,8 @@ lazy_static::lazy_static! {
             "GIT BRANCH/TAG: {}\n"),
             crate_version!(),
             build_time::build_time_utc!(),
-            option_env!("GIT_HASH").unwrap_or("-"),
-            option_env!("GUI_BUILD_BRANCH_TAG").unwrap_or("-"),
+            option_env!("BOBGUI_GIT_HASH").unwrap_or("-"),
+            option_env!("BOBGUI_BUILD_BRANCH_TAG").unwrap_or("-"),
         )
     };
 }
@@ -42,20 +42,6 @@ impl TryFrom<Args> for Config {
             Ok(Self::default())
         } else if let Some(config) = value.config_file {
             Self::from_file(config).change_context(Error::Config)
-        } else {
-            unreachable!()
-        }
-    }
-}
-
-impl TryFrom<Args> for LoggerConfig {
-    type Error = Report<Error>;
-
-    fn try_from(value: Args) -> Result<Self, Self::Error> {
-        if value.default {
-            Ok(Self::default())
-        } else if let Some(config) = value.config_file {
-            Self::from_file(config).change_context(Error::Logger)
         } else {
             unreachable!()
         }

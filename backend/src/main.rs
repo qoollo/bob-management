@@ -13,8 +13,8 @@ use tracing::Level;
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 async fn main() -> Result<(), AppError> {
     let config = cli::Config::try_from(cli::Args::parse())
-        .attach_printable(format!("Couldn't get config file."))
-        .change_context(AppError::InitializationError)?;
+        .change_context(AppError::InitializationError)
+        .attach_printable("Couldn't get config file.")?;
 
     let logger = &config.logger;
 
@@ -34,8 +34,8 @@ async fn main() -> Result<(), AppError> {
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
-        .attach_printable(format!("Failed to start axum server"))
-        .change_context(AppError::StartUpError)?;
+        .change_context(AppError::StartUpError)
+        .attach_printable("Failed to start axum server")?;
 
     Ok(())
 }
