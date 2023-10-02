@@ -8,14 +8,15 @@ edition.workspace = true
 readme.workspace = true
 repository.workspace = true
 
-[[bin]]
+[lib]
 name = "frontend"
 path = "build.rs"
-required-features = [ "dummy" ]
+crate-type = ["lib"]
 
 [build-dependencies]
 tsync = "2"
 
-[features]
-dummy = [ ]
+[dependencies]
+tsync = "2"
+
 

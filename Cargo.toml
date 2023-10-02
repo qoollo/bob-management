@@ -21,14 +21,16 @@ edition = "2021"
 [dependencies]
 cli = { path = "./cli", optional = true }
 backend = { path = "./backend", optional = true }
+frontend = { path = "./frontend", optional = true }
 
 [workspace]
 members = [ "cli", "backend", "frontend", "./" ]
-default-members = [ "backend", "./" ]
+default-members = [ "backend", "./", "frontend" ]
 
 [features]
-default = [ "swagger", "backend" ] 
+default = [ "swagger", "backend", "frontend" ] 
 backend = [ ]
+frontend = [ "dep:frontend" ]
 swagger = [ "backend/swagger" ]
 dummy = [ ]   # HACK: Do not turn on
 
