@@ -17,7 +17,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: run
-          args: -p bob_management --bin gen-openapi --features "swagger gen_api backend" --no-default-features
+          args: --bin gen-openapi --features "swagger gen_api" --no-default-features
       - uses: actions/upload-artifact@v3
         with:
           name: API schemas
