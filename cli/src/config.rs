@@ -49,6 +49,9 @@ pub struct LoggerConfig {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct FileLogger {
+    /// Enable log output to file
+    pub enabled: bool,
+
     /// File to save logs
     pub log_file: Option<PathBuf>,
 
@@ -65,7 +68,10 @@ pub struct FileLogger {
 #[serde_as]
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct StdoutLogger;
+pub struct StdoutLogger {
+    /// Enable log output to stdout
+    pub enabled: bool,
+}
 
 impl Default for Config {
     fn default() -> Self {
@@ -109,6 +115,11 @@ impl LoggerConfig {
 
 impl FileLogger {
     #[must_use]
+    pub const fn default_enabled() -> bool {
+        false
+    }
+
+    #[must_use]
     pub const fn default_log_amount() -> usize {
         5
     }
@@ -124,16 +135,31 @@ impl FileLogger {
     }
 }
 
+impl StdoutLogger {
+    #[must_use]
+    pub const fn default_enabled() -> bool {
+        false
+    }
+}
+
 impl Default for FileLogger {
     fn default() -> Self {
         Self {
             log_file: None,
             log_amount: Self::default_log_amount(),
             log_size: Self::default_log_size(),
+            enabled: Self::default_enabled(),
         }
     }
 }
 
+impl Default for StdoutLogger {
+    fn default() -> Self {
+        Self {
+            enabled: Self::default_enabled(),
+        }
+    }
+}
 pub trait FromFile {
     /// Parses the file spcified in `path`
     ///

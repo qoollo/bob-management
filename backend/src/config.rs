@@ -44,20 +44,30 @@ impl ConfigExt for Config {
 impl LoggerExt for LoggerConfig {
     fn init_logger(&self) -> Result<Vec<WorkerGuard>, LoggerError> {
         let mut guards = Vec::with_capacity(2);
-        let file_writer = if self.file.is_some() {
-            let (writer, guard) = tracing_appender::non_blocking(self.init_file_rotate()?);
-            guards.push(guard);
-            writer
-        } else {
-            tracing_appender::non_blocking(std::io::sink()).0
-        };
-        let std_out_writer = if self.stdout.is_some() {
-            let (writer, guard) = tracing_appender::non_blocking(std::io::stdout());
-            guards.push(guard);
-            writer
-        } else {
-            tracing_appender::non_blocking(std::io::sink()).0
-        };
+        let file_writer = self.file.as_ref().map_or_else(
+            || Ok(tracing_appender::non_blocking(std::io::sink()).0),
+            |config| {
+                Ok(if config.enabled {
+                    let (writer, guard) = tracing_appender::non_blocking(self.init_file_rotate()?);
+                    guards.push(guard);
+                    writer
+                } else {
+                    tracing_appender::non_blocking(std::io::sink()).0
+                })
+            },
+        )?;
+        let std_out_writer = self.stdout.as_ref().map_or_else(
+            || tracing_appender::non_blocking(std::io::sink()).0,
+            |config| {
+                if config.enabled {
+                    let (writer, guard) = tracing_appender::non_blocking(std::io::stdout());
+                    guards.push(guard);
+                    writer
+                } else {
+                    tracing_appender::non_blocking(std::io::sink()).0
+                }
+            },
+        );
 
         tracing_subscriber::registry()
             .with(
