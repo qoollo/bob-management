@@ -55,8 +55,8 @@ pub fn build_frontend() {
     shell("npm build");
 }
 
+#[allow(dead_code)]
 fn main() {
-    println!("cargo:warning=run");
     build_types();
     build_frontend();
 }
