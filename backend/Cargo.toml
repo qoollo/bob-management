@@ -13,7 +13,7 @@ repository.workspace = true
 [[bin]]
 name = "gen-openapi"
 path = "gen_openapi.rs"
-required-features = [ "swagger" ]
+required-features = [ "swagger", "gen_api" ]
 
 [dependencies]
 # Backend (lib.rs)
@@ -50,3 +50,4 @@ cli = { path = "../cli" }
 [features]
 default = [ "swagger" ]
 swagger = [ "dep:utoipa", "dep:utoipa-swagger-ui" , "dep:utoipa-redoc", "dep:utoipa-rapidoc" ]
+gen_api = [ ]
