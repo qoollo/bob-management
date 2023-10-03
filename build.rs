@@ -3,7 +3,7 @@ use std::{path::PathBuf, process::Command};
 
 #[allow(dead_code)]
 fn main() {
-    #[cfg(feature = "frontend")]
+    #[cfg(feature = "frontend-bundle")]
     {
         let mut dir = PathBuf::from(std::env::var("OUT_DIR").unwrap()); // OUT_DIR == <project_dir>/target/<backend_dir>/build/bob_management-<HASH>/out
         dir.pop();
