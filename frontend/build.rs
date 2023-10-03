@@ -51,7 +51,7 @@ pub fn build_frontend() {
     shell("npm install --frozen-lockfile");
 
     // Only build frontend when building a release
-    #[cfg(not(debug_assertions))]
+    // #[cfg(not(debug_assertions))]
     shell("npm build");
 }
 

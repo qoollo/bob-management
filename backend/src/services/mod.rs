@@ -3,6 +3,7 @@ use axum::{
     Router,
 };
 use hyper::{Body, StatusCode};
+use thiserror::Error;
 
 /// Export all secured routes
 #[allow(dead_code)]
@@ -11,21 +12,12 @@ pub fn api_router() -> Router<(), Body> {
 }
 
 /// Errors that happend during API request proccessing
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum APIError {
+    #[error("The request to the specified resource failed")]
     RequestFailed,
+    #[error("Server received invalid status code from client: `{0}`")]
     InvalidStatusCode(StatusCode),
-}
-
-impl std::fmt::Display for APIError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::RequestFailed => f.write_str("The request to the specified resource failed"),
-            Self::InvalidStatusCode(code) => f.write_fmt(format_args!(
-                "Server received invalid status code from client: {code}"
-            )),
-        }
-    }
 }
 
 impl IntoResponse for APIError {

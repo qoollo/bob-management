@@ -1,29 +1,21 @@
 use std::process::{Command, ExitStatus};
 
+const GIT_HASH_VAR: &str = "BOBGUI_GIT_HASH";
+const BRANCH_TAG_VAR: &str = "BOBGUI_BUILD_BRANCH_TAG";
+
 fn main() {
-    option_env!("BOBGUI_GIT_HASH").is_none().then(set_hash);
-
-    option_env!("BOBGUI_BUILD_BRANCH_TAG")
-        .is_none()
-        .then(set_branch_tag);
-
-    println!("cargo:rerun-if-changed=../backend");
+    std::env::var(GIT_HASH_VAR).is_err().then(set_hash);
+    std::env::var(BRANCH_TAG_VAR).is_err().then(set_branch_tag);
 }
 
 fn set_hash() {
-    set_env("BOBGUI_GIT_HASH", "git", &["rev-parse", "HEAD"]);
+    set_env(GIT_HASH_VAR, "git", &["rev-parse", "HEAD"]);
 }
 
 fn set_branch_tag() {
-    if !set_env(
-        "BOBGUI_BUILD_BRANCH_TAG",
-        "git",
-        &["describe", "--tags", "--abbrev=0"],
-    )
-    .success()
-    {
+    if !set_env(BRANCH_TAG_VAR, "git", &["describe", "--tags", "--abbrev=0"]).success() {
         set_env(
-            "BOBGUI_BUILD_BRANCH_TAG",
+            BRANCH_TAG_VAR,
             "git",
             &["rev-parse", "--abbrev-ref", "HEAD"],
         );

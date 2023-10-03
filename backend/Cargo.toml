@@ -1,7 +1,6 @@
 [package]
 name = "backend"
-default-run = "backend"
-description = "Bob Management GUI: Backend"
+description = "Bob Management GUI"
 publish = false
 keywords = [ "BOB", "Management", "GUI" ]
 version.workspace = true
