@@ -12,6 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
+          ref: ${{ github.head_ref }}
           persist-credentials: false
       - uses: actions-rs/cargo@v1
         with:
@@ -25,3 +26,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "Autogenerate API"
+          skip_checkout: true
