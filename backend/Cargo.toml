@@ -42,5 +42,6 @@ utoipa-rapidoc = { version = "0.1", features = ["axum"], optional = true }
 cli = { path = "../cli" }
 
 [features]
+default = [ "swagger" ]
 swagger = [ "utoipa", "utoipa-swagger-ui" , "utoipa-redoc", "utoipa-rapidoc" ]
 
