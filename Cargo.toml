@@ -1,4 +1,32 @@
+[workspace.package]
+version = "0.0.0"   
+authors = ["Romanov Simeon ArchArcheoss@proton.me"]
+repository = "https://github.com/qoollo/bob-management"
+readme = "./README.md"
+license-file = "./LICENSE"
+edition = "2021"
+
 [workspace]
-members = [
-    "bob-management-server",
-]
+members = [ "cli", "backend", "frontend" ]
+default-members = [ "backend",  "frontend" ]
+resolver = "2"
+
+[profile.release]
+# Optimize for size
+# opt-level = "s"
+# Optimize for speed
+opt-level = 3 
+
+# Slightly increase perfomance and reduce binary size
+panic = "abort"
+
+[profile.release-lto]
+inherits = "release"
+# Link Time optimization, causes a bit longer compilation
+lto = true
+# Maximize size reduction optimization, causes longer compilation
+codegen-units = 1 
+
+[profile.min-size]
+inherits = "release"
+opt-level = "s"

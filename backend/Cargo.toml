@@ -1,0 +1,47 @@
+[package]
+name = "backend"
+description = "Bob Management GUI"
+publish = false
+keywords = [ "BOB", "Management", "GUI" ]
+version.workspace = true
+authors.workspace = true
+license-file.workspace = true
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Backend (lib.rs)
+## Axum related
+axum = "0.6"
+axum-macros = "0.3"
+axum-login = "0.6"
+axum-sessions = "0.5"
+tower = "0.4"
+tower-http = { version = "0.4", features = ["cors"] }
+
+## Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+## Error Handling
+error-stack = "0.4"
+thiserror = "1.0"
+
+## General
+tokio = { version = "1.32", features = ["rt", "macros", "rt-multi-thread"] }
+hyper = "0.14"
+
+## OpenAPI + Swagger
+utoipa = { version = "3.4", features = ["axum_extras",  "chrono", "openapi_extensions"], optional = true }
+utoipa-swagger-ui = { version = "3.1", features = ["axum"], optional = true }
+utoipa-redoc = { version = "0.1", features = ["axum"], optional = true }
+utoipa-rapidoc = { version = "0.1", features = ["axum"], optional = true }
+
+## CLI
+cli = { path = "../cli" }
+
+[features]
+default = [ "swagger" ]
+swagger = [ "utoipa", "utoipa-swagger-ui" , "utoipa-redoc", "utoipa-rapidoc" ]
+
