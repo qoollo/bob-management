@@ -1,11 +1,23 @@
+use std::ffi::OsStr;
+use std::fmt::Display;
 ///
 /// Build Script
 /// This is run as a pre-build step -- before the rust backend is compiled.
 /// NOTE: Should be included in root's build script
 ///
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::{fs, io};
 use std::{io::Write, process::Command};
+
+#[cfg(target_family = "windows")]
+const SHELL: &str = "cmd";
+#[cfg(target_family = "unix")]
+const SHELL: &str = "sh";
+#[cfg(target_family = "windows")]
+const SHELL_ARG: &str = "/C";
+#[cfg(target_family = "unix")]
+const SHELL_ARG: &str = "-c";
 
 /*
  * Note 1: this file was written for *nix systems -- it likely won't
@@ -13,12 +25,12 @@ use std::{io::Write, process::Command};
  */
 
 #[allow(dead_code)]
-fn shell(command: &str) {
+fn shell(command: impl AsRef<OsStr> + Display) {
     // println!("build.rs => {}", command);
 
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg(command)
+    let output = Command::new(SHELL)
+        .arg(SHELL_ARG)
+        .arg(&command)
         .output()
         .expect(format!("Failed to run {cmd}", cmd = command).as_str());
 
@@ -61,21 +73,43 @@ pub fn build_frontend() {
     dir.pop();
     let mut project_dir = dir.clone();
     project_dir.pop();
+    let mut target = dir.clone();
+    target.push("dist");
     println!("cargo:warning=Moving /dist to: {dir:?}");
     println!("cargo:warning=PROJECT DIR: {project_dir:?}");
-    println!(
-        "cargo:warning=cp: {:?}",
-        Command::new("cp")
-            .args([
-                "-rf",
-                &format!("{}/frontend/dist", project_dir.to_string_lossy()),
-                dir.to_str().unwrap()
-            ])
-            .output()
-            .expect("Couldn't move frontend build artifacts")
-    );
-    // println!("cargo:rerun-if-changed=frontend");
-    println!("cargo:rerun-if-changed=NULL");
+    project_dir.push("frontend");
+    project_dir.push("dist");
+    #[cfg(target_family = "windows")]
+    Command::new("cmd")
+        .args([
+            r"/C",
+            &format!(
+                r"XCopy {}\* {} /E /H /I",
+                project_dir.to_string_lossy(),
+                target.to_string_lossy()
+            ),
+        ])
+        .spawn()
+        .unwrap();
+    #[cfg(target_family = "unix")]
+    copy_dir_all(project_dir, target).expect("Couldn't move frontend build artifacts");
+
+    println!("cargo:rerun-if-changed=frontend");
+    // println!("cargo:rerun-if-changed=NULL");
+}
+
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+    fs::create_dir_all(&dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        } else {
+            fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        }
+    }
+    Ok(())
 }
 
 #[allow(dead_code)]
