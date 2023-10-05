@@ -7,3 +7,4 @@ Bob Management GUI changelog
 #### Added
 
 - Initial project structure, backend only (#9)
+- Initial project stricture, frontend (#10)

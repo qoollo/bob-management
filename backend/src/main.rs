@@ -48,6 +48,7 @@ fn init_tracer(_log_file: &Option<PathBuf>, trace_level: Level) {
 fn router(cors: CorsLayer) -> Router {
     let mut frontend = env::current_exe().expect("Couldn't get current executable path.");
     frontend.pop();
+    frontend.pop();
     frontend.push("dist");
     tracing::info!("serving frontend at: {frontend:?}");
     // Add api

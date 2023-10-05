@@ -4,9 +4,27 @@ Management UI for Bob
 
 ## Commands
 
+Build backend server:
+
+```sh
+cargo build-backend
+```
+
+Run backend server:
+
+```sh
+cargo run-backend
+```
+
+Build frontend and move it into the backend's executable directory:
+
+```sh
+cargo build-frontend
+```
+
 ---
 
-Run debug build:
+Run debug build (Backend + Frontend):
 
 ```sh
 cargo run -- --default
@@ -14,7 +32,7 @@ cargo run -- --default
 
 ---
 
-Make release build:
+Make release build (Backend + Frontend):
 
 ```sh
 cargo build --profile=release-lto
