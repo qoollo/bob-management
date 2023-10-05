@@ -1,10 +1,10 @@
-use std::ffi::OsStr;
-use std::fmt::Display;
 ///
 /// Build Script
 /// This is run as a pre-build step -- before the rust backend is compiled.
 /// NOTE: Should be included in root's build script
 ///
+use std::ffi::OsStr;
+use std::fmt::Display;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
@@ -66,32 +66,19 @@ pub fn build_frontend() {
     // #[cfg(not(debug_assertions))]
     shell("yarn build");
 
-    let mut dir = PathBuf::from(std::env::var("OUT_DIR").unwrap()); // OUT_DIR == <project_dir>/target/<traget_profile>/build/bob_management-<HASH>/out
+    let mut dir = PathBuf::from(std::env::var("OUT_DIR").unwrap()); // OUT_DIR == <project_dir>/target/<target_profile>/build/bob_management-<HASH>/out
     dir.pop();
     dir.pop();
     dir.pop();
     dir.pop();
     let mut project_dir = dir.clone();
-    project_dir.pop();
     let mut target = dir.clone();
+    project_dir.pop();
     target.push("dist");
     println!("cargo:warning=Moving /dist to: {dir:?}");
     println!("cargo:warning=PROJECT DIR: {project_dir:?}");
     project_dir.push("frontend");
     project_dir.push("dist");
-    #[cfg(target_family = "windows")]
-    Command::new("cmd")
-        .args([
-            r"/C",
-            &format!(
-                r"XCopy {}\* {} /E /H /I",
-                project_dir.to_string_lossy(),
-                target.to_string_lossy()
-            ),
-        ])
-        .spawn()
-        .unwrap();
-    #[cfg(target_family = "unix")]
     copy_dir_all(project_dir, target).expect("Couldn't move frontend build artifacts");
 
     println!("cargo:rerun-if-changed=frontend");
@@ -109,6 +96,7 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
             fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
         }
     }
+
     Ok(())
 }
 
