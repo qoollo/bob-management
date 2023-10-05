@@ -4,11 +4,11 @@ const GIT_HASH_VAR: &str = "BOBGUI_GIT_HASH";
 const BRANCH_TAG_VAR: &str = "BOBGUI_BUILD_BRANCH_TAG";
 
 fn main() {
-    std::env::var(GIT_HASH_VAR).is_err().then(set_hash);
+    std::env::var(GIT_HASH_VAR).is_err().then(set_commit_hash);
     std::env::var(BRANCH_TAG_VAR).is_err().then(set_branch_tag);
 }
 
-fn set_hash() {
+fn set_commit_hash() {
     set_env(GIT_HASH_VAR, "git", &["rev-parse", "HEAD"]);
 }
 

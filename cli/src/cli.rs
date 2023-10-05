@@ -3,6 +3,7 @@ use clap::{crate_authors, crate_version, Parser};
 use error_stack::ResultExt;
 pub use error_stack::{Context, Report};
 use std::{fmt::Display, path::PathBuf};
+use thiserror::Error;
 
 lazy_static::lazy_static! {
     static ref VERSION: String = {
@@ -48,19 +49,10 @@ impl TryFrom<Args> for Config {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum Error {
+    #[error("couldn't get logger configuration")]
     Logger,
+    #[error("couldn't get server configuration")]
     Config,
 }
-
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            Self::Logger => "cli error: couldn't get logger configuration",
-            Self::Config => "cli error: couldn't get server configuration",
-        })
-    }
-}
-
-impl Context for Error {}

@@ -89,7 +89,7 @@ impl Default for LoggerConfig {
             log_file: None,
             log_amount: Self::default_log_amount(),
             log_size: Self::default_log_size(),
-            trace_level: tracing::Level::INFO,
+            trace_level: Self::tracing_default(),
         }
     }
 }
