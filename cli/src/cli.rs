@@ -1,8 +1,8 @@
 use crate::config::{Config, FromFile};
 use clap::{crate_authors, crate_version, Parser};
+use error_stack::Report;
 use error_stack::ResultExt;
-pub use error_stack::{Context, Report};
-use std::{fmt::Display, path::PathBuf};
+use std::path::PathBuf;
 use thiserror::Error;
 
 lazy_static::lazy_static! {
