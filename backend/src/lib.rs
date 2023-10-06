@@ -16,7 +16,7 @@ pub mod services;
 #[allow(clippy::unused_async)]
 #[cfg_attr(feature = "swagger", utoipa::path(
         get,
-        path = "/",
+        path = "/root",
         responses(
             (status = 200, description = "Hello Bob!")
         )
