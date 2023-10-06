@@ -63,7 +63,7 @@ RUN addgroup -S $APP_USER \
 EXPOSE 9000
 
 COPY --from=backend --chown=$APP_USER:$APP_USER /build_output/backend ${APP}/backend
-COPY --from=frontend --chown=$APP_USER:$APP_USER /frontend/dist ${APP}/dist
+COPY --from=frontend --chown=$APP_USER:$APP_USER /frontend/frontend ${APP}/frontend
 
 USER $APP_USER
 WORKDIR ${APP}
