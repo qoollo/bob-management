@@ -89,11 +89,15 @@ pub fn move_frontend() {
         .append(true)
         .open("build.log")
         .expect("Couldn't open log file...");
-    file.write(format!("PROJECT DIR: {project_dir:?}\n").as_bytes())
+    file.write_all(format!("PROJECT DIR: {project_dir:?}\n").as_bytes())
         .expect("Couldn't write to build log");
 
-    file.write(format!("Moving /{FRONTEND_DIR} from {project_dir:?} to: {target:?}\n").as_bytes())
-        .expect("Couldn't write to build log");
+    project_dir.push(FRONTEND_DIR);
+
+    file.write_all(
+        format!("Moving /{FRONTEND_DIR} from {project_dir:?} to: {target:?}\n").as_bytes(),
+    )
+    .expect("Couldn't write to build log");
 
     copy_dir_all(project_dir, target).expect("Couldn't move frontend build artifacts");
 }
