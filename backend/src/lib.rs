@@ -34,7 +34,7 @@ pub fn openapi_doc() -> Router {
 
     /* Swagger-only routes */
     #[cfg(debug_assertions)]
-    tracing::info!("Generating OpenAPI documentation...");
+    tracing::info!("Swagger ui available at /swagger-ui");
     #[derive(OpenApi)]
     #[openapi(
             paths(root),
