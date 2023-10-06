@@ -9,6 +9,8 @@ use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing::Level;
 
+const FRONTEND_FOLDER: &str = "frontend";
+
 #[tokio::main]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 async fn main() -> Result<(), AppError> {
@@ -48,8 +50,7 @@ fn init_tracer(_log_file: &Option<PathBuf>, trace_level: Level) {
 fn router(cors: CorsLayer) -> Router {
     let mut frontend = env::current_exe().expect("Couldn't get current executable path.");
     frontend.pop();
-    frontend.pop();
-    frontend.push("dist");
+    frontend.push(FRONTEND_FOLDER);
     tracing::info!("serving frontend at: {frontend:?}");
     // Add api
     Router::new()

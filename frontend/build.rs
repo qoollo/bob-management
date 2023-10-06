@@ -19,6 +19,8 @@ const SHELL_ARG: &str = "/C";
 #[cfg(target_family = "unix")]
 const SHELL_ARG: &str = "-c";
 
+const FRONTEND_DIR: &str = "frontend";
+
 /*
  * Note 1: this file was written for *nix systems -- it likely won't
  * work on windows!
@@ -35,7 +37,7 @@ fn shell(command: impl AsRef<OsStr> + Display) {
         .expect(format!("Failed to run {cmd}", cmd = command).as_str());
 
     // println!("build.rs => {:?}", output.stdout);
-    let mut file = File::create("build.log").expect("Couldn't create file...");
+    let mut file = File::create("build.log").expect("Couldn't create log file...");
     file.write(b"build log\n\n\n\nSTDOUT:\n")
         .expect("Couldn't write to build log");
     file.write_all(&output.stdout)
@@ -44,6 +46,8 @@ fn shell(command: impl AsRef<OsStr> + Display) {
         .expect("Couldn't write to build log");
     file.write_all(&output.stderr)
         .expect("Couldn't write to build log");
+
+    assert!(output.status.success(), "yarn couldn't build frontend");
 }
 
 pub fn build_types() {
@@ -65,24 +69,29 @@ pub fn build_frontend() {
     // Only build frontend when building a release
     // #[cfg(not(debug_assertions))]
     shell("yarn build");
+}
 
-    let mut dir = PathBuf::from(std::env::var("OUT_DIR").unwrap()); // OUT_DIR == <project_dir>/target/<target_profile>/build/bob_management-<HASH>/out
-    dir.pop();
-    dir.pop();
-    dir.pop();
-    dir.pop();
-    let mut project_dir = dir.clone();
-    let mut target = dir.clone();
-    project_dir.pop();
-    target.push("dist");
-    println!("cargo:warning=Moving /dist to: {dir:?}");
-    println!("cargo:warning=PROJECT DIR: {project_dir:?}");
-    project_dir.push("frontend");
-    project_dir.push("dist");
+pub fn move_frontend() {
+    let mut target = PathBuf::from(std::env::var("OUT_DIR").unwrap()); // OUT_DIR == <project_dir>/target/<target_profile>/build/bob_management-<HASH>/out
+    let mut project_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    target.pop();
+    target.pop();
+    target.pop();
+    target.push(FRONTEND_DIR);
+
+    let mut file = std::fs::OpenOptions::new()
+        .append(true)
+        .open("build.log")
+        .expect("Couldn't open log file...");
+    file.write(format!("PROJECT DIR: {project_dir:?}\n").as_bytes())
+        .expect("Couldn't write to build log");
+
+    project_dir.push(FRONTEND_DIR);
+
+    file.write(format!("Moving /{FRONTEND_DIR} from {project_dir:?} to: {target:?}\n").as_bytes())
+        .expect("Couldn't write to build log");
+
     copy_dir_all(project_dir, target).expect("Couldn't move frontend build artifacts");
-
-    println!("cargo:rerun-if-changed=frontend");
-    // println!("cargo:rerun-if-changed=NULL");
 }
 
 fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
@@ -104,4 +113,6 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
 fn main() {
     build_types();
     build_frontend();
+    move_frontend();
+    println!("cargo:rerun-if-changed=./");
 }

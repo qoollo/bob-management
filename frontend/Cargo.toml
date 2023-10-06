@@ -10,7 +10,7 @@ repository.workspace = true
 
 [lib]
 name = "frontend"
-path = "build.rs"
+path = "frontend.rs"
 crate-type = ["lib"]
 
 [build-dependencies]
