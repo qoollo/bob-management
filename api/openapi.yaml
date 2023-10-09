@@ -8,7 +8,7 @@ info:
     name: ''
   version: 0.0.0
 paths:
-  /:
+  /root:
     get:
       tags:
       - crate
