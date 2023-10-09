@@ -12,13 +12,13 @@ pub mod macros;
 pub mod models;
 pub mod services;
 
-#[derive(OpenApi)]
-#[openapi(
+#[cfg_attr(feature = "swagger", derive(OpenApi))]
+#[cfg_attr(feature = "swagger", openapi(
     paths(root),
     tags(
         (name = "bob", description = "BOB management API")
     )
-)]
+))]
 pub struct ApiDoc;
 
 // [TEMP]
@@ -71,4 +71,6 @@ pub mod prelude {
     pub use crate::macros::RouteError;
     pub use axum::response::Result as AxumResult;
     pub use error_stack::{Context, Report, Result, ResultExt};
+    #[cfg(feature = "swagger")]
+    pub use utoipa::OpenApi;
 }

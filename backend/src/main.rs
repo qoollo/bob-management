@@ -1,14 +1,16 @@
 #![allow(clippy::multiple_crate_versions)]
 
+#[cfg(feature = "swagger")]
+use backend::ApiDoc;
+
 use axum::{routing::get, Router};
-use backend::{config::ConfigExt, new_api_route, prelude::*, root, services::api_router, ApiDoc};
+use backend::{config::ConfigExt, new_api_route, prelude::*, root, services::api_router};
 use cli::Parser;
 use error_stack::{Result, ResultExt};
 use std::{env, path::PathBuf};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing::Level;
-use utoipa::OpenApi;
 
 const FRONTEND_FOLDER: &str = "frontend";
 

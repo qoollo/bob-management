@@ -52,7 +52,10 @@ macro_rules! new_api_route {
     }};
     ($route:literal, $func:ident, $method:ident) => {{
         || -> Result<(), RouteError> {
-            Ok(ApiDoc::openapi()
+            #[cfg(not(feature = "swagger"))]
+            return Ok(());
+            #[cfg(feature = "swagger")]
+            return Ok(ApiDoc::openapi()
                 .paths
                 .get_path_item(
                     $route
@@ -74,7 +77,7 @@ macro_rules! new_api_route {
                 .ok_or(RouteError::NoOperation)?
                 .eq(&stringify!($func))
                 .then_some(())
-                .ok_or(RouteError::NoMatch)?)
+                .ok_or(RouteError::NoMatch)?);
         }
     }
     ()};
