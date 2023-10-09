@@ -32,12 +32,13 @@ thiserror = "1.0"
 ## General
 tokio = { version = "1.32", features = ["rt", "macros", "rt-multi-thread" ] }
 hyper = "0.14"
+lazy_static = "1.4"
 
 ## OpenAPI + Swagger
-utoipa = { version = "3.4", features = ["yaml", "axum_extras",  "chrono", "openapi_extensions"], optional = true }
-utoipa-swagger-ui = { version = "3.1", features = ["axum"], optional = true }
-utoipa-redoc = { version = "0.1", features = ["axum"], optional = true }
-utoipa-rapidoc = { version = "0.1", features = ["axum"], optional = true }
+utoipa = { version = "4.0", features = ["yaml", "axum_extras",  "chrono", "openapi_extensions"], optional = true }
+utoipa-swagger-ui = { version = "4.0", features = ["axum"], optional = true }
+utoipa-redoc = { version = "1.0", features = ["axum"], optional = true }
+utoipa-rapidoc = { version = "1.0", features = ["axum"], optional = true }
 
 ## CLI
 cli = { path = "../cli" }

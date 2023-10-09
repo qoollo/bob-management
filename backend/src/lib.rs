@@ -8,8 +8,18 @@ use utoipa::OpenApi;
 pub mod config;
 pub mod connector;
 pub mod error;
+pub mod macros;
 pub mod models;
 pub mod services;
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(root),
+    tags(
+        (name = "bob", description = "BOB management API")
+    )
+)]
+pub struct ApiDoc;
 
 // [TEMP]
 // TODO: Remove when the actual API will be implemented
@@ -35,14 +45,7 @@ pub fn openapi_doc() -> Router {
     /* Swagger-only routes */
     #[cfg(debug_assertions)]
     tracing::info!("Swagger ui available at /swagger-ui");
-    #[derive(OpenApi)]
-    #[openapi(
-            paths(root),
-            tags(
-                (name = "bob", description = "BOB management API")
-            )
-        )]
-    struct ApiDoc;
+
     /* Mount Swagger ui */
     Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
@@ -65,6 +68,7 @@ pub fn openapi_doc() -> Router {
 pub mod prelude {
     #![allow(unused_imports)]
     pub use crate::error::AppError;
+    pub use crate::macros::RouteError;
     pub use axum::response::Result as AxumResult;
     pub use error_stack::{Context, Report, Result, ResultExt};
 }

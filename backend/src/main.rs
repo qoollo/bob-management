@@ -1,13 +1,14 @@
 #![allow(clippy::multiple_crate_versions)]
 
 use axum::{routing::get, Router};
-use backend::{config::ConfigExt, prelude::*, root, services::api_router};
+use backend::{config::ConfigExt, new_api_route, prelude::*, root, services::api_router, ApiDoc};
 use cli::Parser;
 use error_stack::{Result, ResultExt};
 use std::{env, path::PathBuf};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing::Level;
+use utoipa::OpenApi;
 
 const FRONTEND_FOLDER: &str = "frontend";
 
@@ -52,12 +53,13 @@ fn router(cors: CorsLayer) -> Router {
     frontend.pop();
     frontend.push(FRONTEND_FOLDER);
     tracing::info!("serving frontend at: {frontend:?}");
-    // Add api
-    Router::new()
+    let mut router = Router::new()
         // Frontend
-        .nest_service("/", ServeDir::new(frontend))
-        // Unsecured Routes
-        .route("/root", get(root))
+        .nest_service("/", ServeDir::new(frontend));
+
+    // Add API
+    router = new_api_route!(router, "/root", get(root)).expect("Couldn't register new API route");
+    router
         .nest("/api", api_router())
         .layer(ServiceBuilder::new().layer(cors))
 }

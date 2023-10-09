@@ -47,7 +47,11 @@ fn shell(command: impl AsRef<OsStr> + Display) {
     file.write_all(&output.stderr)
         .expect("Couldn't write to build log");
 
-    assert!(output.status.success(), "yarn couldn't build frontend");
+    assert!(
+        output.status.success(),
+        "{command} couldn't build frontend. Exit code: {:?}",
+        output.status.code().expect("The process was terminated")
+    );
 }
 
 pub fn build_types() {
@@ -73,11 +77,13 @@ pub fn build_frontend() {
 
 pub fn move_frontend() {
     let mut target = PathBuf::from(std::env::var("OUT_DIR").unwrap()); // OUT_DIR == <project_dir>/target/<target_profile>/build/bob_management-<HASH>/out
-    let mut project_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     target.pop();
     target.pop();
     target.pop();
     target.push(FRONTEND_DIR);
+
+    let mut project_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    project_dir.push(FRONTEND_DIR);
 
     let mut file = std::fs::OpenOptions::new()
         .append(true)
@@ -85,8 +91,6 @@ pub fn move_frontend() {
         .expect("Couldn't open log file...");
     file.write(format!("PROJECT DIR: {project_dir:?}\n").as_bytes())
         .expect("Couldn't write to build log");
-
-    project_dir.push(FRONTEND_DIR);
 
     file.write(format!("Moving /{FRONTEND_DIR} from {project_dir:?} to: {target:?}\n").as_bytes())
         .expect("Couldn't write to build log");
