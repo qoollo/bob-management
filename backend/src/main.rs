@@ -4,21 +4,7 @@
     clippy::expect_used
 )]
 
-use axum::Router;
-use bob_management::{
-    config::{ConfigExt, LoggerExt},
-    prelude::*,
-    root,
-    router::{ApiV1, ApiVersion, NoApi, RouterApiExt},
-    services::api_router_v1,
-    ApiDoc,
-};
-use cli::Parser;
-use error_stack::{Result, ResultExt};
-use hyper::Method;
-use std::env;
-use tower::ServiceBuilder;
-use tower_http::{cors::CorsLayer, services::ServeDir};
+use bob_management::main::prelude::*;
 
 const FRONTEND_FOLDER: &str = "frontend";
 
@@ -41,7 +27,9 @@ async fn main() -> Result<(), AppError> {
 
     let app = router(cors);
     #[cfg(all(feature = "swagger", debug_assertions))]
-    let app = app.merge(bob_management::openapi_doc());
+    let app = app
+        .merge(bob_management::openapi_doc())
+        .layer(Extension(RequestTimeout::from(config.request_timeout)));
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
@@ -54,6 +42,20 @@ async fn main() -> Result<(), AppError> {
 
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 fn router(cors: CorsLayer) -> Router {
+    let session_store = MemoryStore::default();
+    let session_service = ServiceBuilder::new()
+        .layer(HandleErrorLayer::new(|err: BoxError| async move {
+            tracing::error!(err);
+            StatusCode::BAD_REQUEST
+        }))
+        .layer(
+            SessionManagerLayer::new(session_store)
+                .with_expiry(tower_sessions::Expiry::OnSessionEnd),
+        );
+
+    let user_store: InMemorySessionStore<Uuid, BobUser> = InMemorySessionStore::default();
+    let auth_state = AuthState::new(user_store);
+
     let mut frontend = env::current_exe().expect("Couldn't get current executable path.");
     frontend.pop();
     frontend.push(FRONTEND_FOLDER);
@@ -62,28 +64,26 @@ fn router(cors: CorsLayer) -> Router {
         // Frontend
         .nest_service("/", ServeDir::new(frontend));
 
-    // Add API
-    let router = router
-        .with_context::<NoApi, ApiDoc>()
-        .api_route("/root", &Method::GET, root)
-        .unwrap()
-        .expect("Couldn't register new API route");
-
     router
         .nest(
             ApiV1::to_path(),
-            api_router_v1().expect("couldn't get API routes"),
+            api_router_v1(auth_state.clone())
+                .expect("couldn't get API routes")
+                .layer(ServiceBuilder::new().layer(cors)),
         )
-        .layer(ServiceBuilder::new().layer(cors))
+        .layer(session_service)
+        .with_state(auth_state)
 }
 
 #[cfg(test)]
 mod tests {
     #![allow(clippy::expect_used)]
+    use bob_management::main::prelude::*;
     use bob_management::services::api_router_v1;
-
     #[test]
     fn register_routes() {
-        let _ = api_router_v1().expect("Router has invalid API methods");
+        let user_store: InMemorySessionStore<Uuid, BobUser> = InMemorySessionStore::default();
+        let auth_state = AuthState::new(user_store);
+        let _ = api_router_v1(auth_state).expect("Router has invalid API methods");
     }
 }

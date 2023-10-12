@@ -26,12 +26,14 @@ RUN echo "$(case "$BUILD_PROFILE" in\
   (*) echo "$BUILD_PROFILE";;\
   esac)" >> ./build_profile_dir
 
-RUN mkdir -p backend/src frontend cli/src utils/src
+RUN mkdir -p backend/src frontend cli/src utils/src proc_macro/src
 RUN mkdir target
 COPY Cargo.toml Cargo.toml
 COPY cli/Cargo.toml cli/Cargo.toml
 COPY backend/Cargo.toml backend/Cargo.toml
 COPY utils/Cargo.toml utils/Cargo.toml
+COPY proc_macro/Cargo.toml proc_macro/Cargo.toml
+COPY proc_macro/src/lib.rs proc_macro/src/lib.rs
 COPY frontend/Cargo.toml frontend/Cargo.toml
 COPY .cargo .cargo
 RUN echo "// if you see this, the build broke" > backend/src/lib.rs \
