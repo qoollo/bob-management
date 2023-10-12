@@ -1,12 +1,17 @@
 #![allow(clippy::multiple_crate_versions)]
 
-#[cfg(feature = "swagger")]
-use backend::ApiDoc;
-
-use axum::{routing::get, Router};
-use backend::{config::ConfigExt, new_api_route, prelude::*, root, services::api_router};
+use axum::Router;
+use backend::{
+    config::ConfigExt,
+    prelude::*,
+    root,
+    router::{NoApi, RouterApiExt},
+    services::api_router,
+    ApiDoc,
+};
 use cli::Parser;
 use error_stack::{Result, ResultExt};
+use hyper::Method;
 use std::{env, path::PathBuf};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
@@ -55,12 +60,14 @@ fn router(cors: CorsLayer) -> Router {
     frontend.pop();
     frontend.push(FRONTEND_FOLDER);
     tracing::info!("serving frontend at: {frontend:?}");
-    let mut router = Router::new()
+    let router = Router::new()
         // Frontend
         .nest_service("/", ServeDir::new(frontend));
 
     // Add API
-    router = new_api_route!(router, "/root", get(root)).expect("Couldn't register new API route");
+    let router = router
+        .api_route::<_, _, NoApi, ApiDoc>("/root", Method::GET, root)
+        .expect("Couldn't register new API route");
     router
         .nest("/api", api_router())
         .layer(ServiceBuilder::new().layer(cors))

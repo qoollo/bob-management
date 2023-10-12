@@ -8,8 +8,8 @@ use utoipa::OpenApi;
 pub mod config;
 pub mod connector;
 pub mod error;
-pub mod macros;
 pub mod models;
+pub mod router;
 pub mod services;
 
 #[cfg_attr(feature = "swagger", derive(OpenApi))]
@@ -68,7 +68,7 @@ pub fn openapi_doc() -> Router {
 pub mod prelude {
     #![allow(unused_imports)]
     pub use crate::error::AppError;
-    pub use crate::macros::RouteError;
+    pub use crate::router::RouteError;
     pub use axum::response::Result as AxumResult;
     pub use error_stack::{Context, Report, Result, ResultExt};
     #[cfg(feature = "swagger")]
