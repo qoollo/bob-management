@@ -12,3 +12,4 @@ Bob Management GUI changelog
 - CI/CD configuration (#11)
 - Logger Initialization (#14)
 - Login Page, backend (#16)
+- Login Page, frontend (#17)

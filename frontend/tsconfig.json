@@ -1,9 +1,29 @@
 {
-  "extends": "astro/tsconfigs/strict",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true
-  }
+    "extends": "astro/tsconfigs/strict",
+    "compilerOptions": {
+        "declaration": true,
+        "strict": true,
+        "lib": ["es6", "dom"],
+        "moduleResolution": "Node16",
+        "target": "ES2022",
+        "module": "Node16",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "jsx": "react-jsx",
+        "baseUrl": ".",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "allowJs": true,
+        "verbatimModuleSyntax": true,
+        "allowImportingTsExtensions": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "strictNullChecks": true,
+        "paths": {
+            "react": ["node_modules/@types/react"],
+            "@components/*": ["src/components/*"],
+            "@layouts/*": ["src/layouts/*"],
+            "@types/*": ["src/types/*"]
+        }
+    }
 }

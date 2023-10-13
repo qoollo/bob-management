@@ -58,8 +58,11 @@ pub fn build_types() {
     let mut inputs = vec![PathBuf::from(env!("CARGO_MANIFEST_DIR"))];
     let mut output = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     inputs[0].pop();
+    inputs.push(inputs[0].clone());
 
     inputs[0].push("backend");
+    inputs[1].push("frontend");
+    inputs[1].push("frontend.rs");
     output.push("src/types/rust.d.ts");
 
     tsync::generate_typescript_defs(inputs, output, false);
@@ -69,6 +72,10 @@ pub fn build_frontend() {
     // Only install frontend dependencies when building release
     // #[cfg(not(debug_assertions))]
     shell("yarn");
+
+    let mut project_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    project_dir.push(FRONTEND_DIR);
+    std::fs::remove_dir_all(project_dir);
 
     // Only build frontend when building a release
     // #[cfg(not(debug_assertions))]
@@ -82,6 +89,8 @@ pub fn move_frontend() {
     target.pop();
     target.push(FRONTEND_DIR);
 
+    // Note: sometimes, build can fail if the previous build is still present
+    // What a lovely language....
     let mut project_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     project_dir.push(FRONTEND_DIR);
 
