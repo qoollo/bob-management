@@ -38,7 +38,7 @@ async fn main() -> Result<(), AppError> {
     tracing::info!("Listening on {addr}");
 
     let app = router(cors);
-    #[cfg(feature = "swagger")]
+    #[cfg(all(feature = "swagger", debug_assertions))]
     let app = app.merge(backend::openapi_doc());
 
     axum::Server::bind(&addr)
@@ -66,8 +66,11 @@ fn router(cors: CorsLayer) -> Router {
 
     // Add API
     let router = router
-        .api_route::<_, _, NoApi, ApiDoc>("/root", Method::GET, root)
-        .expect("Couldn't register new API route");
+        .with_context::<NoApi, ApiDoc>()
+        .api_route("/root", Method::GET, root)
+        .expect("Couldn't register new API route")
+        .no_context();
+    // .no_context();
     router
         .nest("/api", api_router())
         .layer(ServiceBuilder::new().layer(cors))

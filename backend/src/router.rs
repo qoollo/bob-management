@@ -4,6 +4,7 @@ use axum::routing::on;
 use axum::{handler::Handler, routing::MethodFilter, Router};
 use hyper::{Body, Method};
 use std::convert::Infallible;
+use std::marker::PhantomData;
 use std::ops::Deref;
 use thiserror::Error;
 use utoipa::openapi::PathItemType;
@@ -44,10 +45,74 @@ impl<'a> ApiVersion<'a> for ApiV1 {
     }
 }
 
+pub struct ContextRouter<Version, Doc, S = (), B = Body> {
+    inner: Router<S, B>,
+    context: PhantomData<(Version, Doc)>,
+}
+
+impl<'a, Version, Doc, S, B> ContextRouter<Version, Doc, S, B>
+where
+    Version: ApiVersion<'a>,
+    Doc: OpenApi,
+{
+    pub fn no_context(self) -> Router<S, B> {
+        self.inner
+    }
+
+    #[must_use]
+    pub fn new_context<V, D>(self) -> ContextRouter<V, D, S, B> {
+        ContextRouter {
+            inner: self.inner,
+            context: PhantomData,
+        }
+    }
+
+    /// Calls `api_route` on inner `Router`
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error in the same cases as inner `api_route` call
+    pub fn api_route<H, T>(
+        mut self,
+        path: &str,
+        method: Method,
+        handler: H,
+    ) -> Result<Self, RouteError>
+    where
+        H: Handler<T, S, B>,
+        T: 'static,
+        S: Send + Sync + 'static,
+        B: HttpBody + Send + 'static,
+        S: Clone + Send + Sync + 'static,
+    {
+        self.inner = self
+            .inner
+            .api_route::<H, T, Version, Doc>(path, method, handler)?;
+
+        Ok(self)
+    }
+}
+
+impl<V, D, S, B> Deref for ContextRouter<V, D, S, B> {
+    type Target = Router<S, B>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
 pub trait RouterApiExt<S = (), B = Body, E = Infallible> {
-    ///  Add API Route
-    ///   
-    fn api_route<'a, H, T, Version, ApiDocumentation>(
+    /// Wraps `Router` with `ApiVersion` and `OpenApi` instances into the new context to call
+    /// `api_route` with said context
+    fn with_context<Version, Doc>(self) -> ContextRouter<Version, Doc, S, B>;
+
+    /// Add API Route
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if a new route is mismatched with it's `OpenApi`
+    /// representation
+    fn api_route<'a, H, T, Version, Doc>(
         self,
         path: &str,
         method: Method,
@@ -58,7 +123,7 @@ pub trait RouterApiExt<S = (), B = Body, E = Infallible> {
         T: 'static,
         S: Send + Sync + 'static,
         Version: ApiVersion<'a>,
-        ApiDocumentation: OpenApi,
+        Doc: OpenApi,
         Self: Sized;
 }
 
@@ -67,7 +132,14 @@ where
     B: HttpBody + Send + 'static,
     S: Clone + Send + Sync + 'static,
 {
-    fn api_route<'a, H, T, Version, ApiDocumentation>(
+    fn with_context<Version, Doc>(self) -> ContextRouter<Version, Doc, S, B> {
+        ContextRouter {
+            inner: self,
+            context: PhantomData,
+        }
+    }
+
+    fn api_route<'a, H, T, Version, Doc>(
         self,
         path: &str,
         method: Method,
@@ -78,25 +150,24 @@ where
         T: 'static,
         S: Send + Sync + 'static,
         Version: ApiVersion<'a>,
-        ApiDocumentation: OpenApi,
+        Doc: OpenApi,
         Self: Sized,
     {
-        check_api::<_, _, _, H, Version, ApiDocumentation>(
+        #[cfg(all(feature = "swagger", debug_assertions))]
+        check_api::<_, _, _, H, Version, Doc>(
             path,
-            &*TryInto::<MethodWrapper<PathItemType>>::try_into(method.clone())?,
+            &try_convert_path_item_type_from_method(&method)?,
         )?;
         Ok(self.route(
             path,
-            on(
-                *TryInto::<MethodWrapper<MethodFilter>>::try_into(method)?,
-                handler,
-            ),
+            on(try_convert_method_filter_from_method(&method)?, handler),
         ))
     }
 }
 
 /// Check if the following route corresponds with `OpenAPI` declaration
 /// Relies on `operation_id` field, must NOT be changed on handler's declaration
+#[cfg(all(feature = "swagger", debug_assertions))]
 fn check_api<'a, T, S, B, H, Version, ApiDocumentation>(
     path: &str,
     method: &PathItemType,
@@ -108,8 +179,6 @@ where
     ApiDocumentation: OpenApi,
     Version: ApiVersion<'a>,
 {
-    #[cfg(any(not(debug_assertions), not(feature = "swagger")))]
-    return Ok(());
     let route = [
         Version::to_path(),
         &path
@@ -166,43 +235,38 @@ impl Deref for MethodWrapper<MethodFilter> {
     }
 }
 
-// FIXME: Is there a better way to do this?..
-impl TryFrom<Method> for MethodWrapper<PathItemType> {
-    type Error = RouteError;
-
-    fn try_from(value: Method) -> std::result::Result<Self, Self::Error> {
-        Ok(match value {
-            Method::GET => Self(PathItemType::Get),
-            Method::PUT => Self(PathItemType::Put),
-            Method::POST => Self(PathItemType::Post),
-            Method::HEAD => Self(PathItemType::Head),
-            Method::PATCH => Self(PathItemType::Patch),
-            Method::TRACE => Self(PathItemType::Trace),
-            Method::DELETE => Self(PathItemType::Delete),
-            Method::OPTIONS => Self(PathItemType::Options),
-            Method::CONNECT => Self(PathItemType::Connect),
-            _ => Err(RouteError::UnexpectedMethod)?,
-        })
-    }
+fn try_convert_path_item_type_from_method(
+    value: &Method,
+) -> std::result::Result<PathItemType, RouteError> {
+    Ok(match *value {
+        Method::GET => PathItemType::Get,
+        Method::PUT => PathItemType::Put,
+        Method::POST => PathItemType::Post,
+        Method::HEAD => PathItemType::Head,
+        Method::PATCH => PathItemType::Patch,
+        Method::TRACE => PathItemType::Trace,
+        Method::DELETE => PathItemType::Delete,
+        Method::OPTIONS => PathItemType::Options,
+        Method::CONNECT => PathItemType::Connect,
+        _ => Err(RouteError::UnexpectedMethod)?,
+    })
 }
 
-impl TryFrom<Method> for MethodWrapper<MethodFilter> {
-    type Error = RouteError;
-
-    fn try_from(value: Method) -> std::result::Result<Self, Self::Error> {
-        Ok(match value {
-            Method::GET => Self(MethodFilter::GET),
-            Method::PUT => Self(MethodFilter::PUT),
-            Method::POST => Self(MethodFilter::POST),
-            Method::HEAD => Self(MethodFilter::HEAD),
-            Method::PATCH => Self(MethodFilter::PATCH),
-            Method::TRACE => Self(MethodFilter::TRACE),
-            Method::DELETE => Self(MethodFilter::DELETE),
-            Method::OPTIONS => Self(MethodFilter::OPTIONS),
-            Method::CONNECT => Err(RouteError::UnexpectedMethod)?,
-            _ => Err(RouteError::UnexpectedMethod)?,
-        })
-    }
+fn try_convert_method_filter_from_method(
+    value: &Method,
+) -> std::result::Result<MethodFilter, RouteError> {
+    Ok(match *value {
+        Method::GET => MethodFilter::GET,
+        Method::PUT => MethodFilter::PUT,
+        Method::POST => MethodFilter::POST,
+        Method::HEAD => MethodFilter::HEAD,
+        Method::PATCH => MethodFilter::PATCH,
+        Method::TRACE => MethodFilter::TRACE,
+        Method::DELETE => MethodFilter::DELETE,
+        Method::OPTIONS => MethodFilter::OPTIONS,
+        Method::CONNECT => Err(RouteError::UnexpectedMethod)?,
+        _ => Err(RouteError::UnexpectedMethod)?,
+    })
 }
 
 mod tests {
@@ -210,10 +274,12 @@ mod tests {
     use super::*;
 
     #[derive(OpenApi)]
-    #[openapi(paths(test_route, test_root_route, connect_route))]
+    #[openapi(paths(test_route, test_root_route, connect_route, test_post_route))]
     pub struct TestDoc;
     #[utoipa::path(get, path = "/test")]
     async fn test_route() {}
+    #[utoipa::path(post, path = "/test_post")]
+    async fn test_post_route() {}
     #[utoipa::path(get, context_path = "/context", path = "/")]
     async fn test_root_route() {}
     #[utoipa::path(connect, path = "/connect")]
@@ -227,10 +293,135 @@ mod tests {
     }
 
     #[test]
+    fn correct_api_with_context_wrapper() {
+        let router = Router::<(), Body>::new()
+            .with_context::<NoApi, TestDoc>()
+            .api_route("/test", Method::GET, test_route);
+
+        assert!(router.is_ok(), "Err: {:?}", router.err().unwrap());
+    }
+
+    #[test]
+    fn incorrect_path_with_context_wrapper() {
+        assert_eq!(
+            Router::<(), Body>::new()
+                .with_context::<NoApi, TestDoc>()
+                .api_route("/tester", Method::GET, test_route)
+                .err()
+                .unwrap()
+                .current_context(),
+            &RouteError::NoRoute
+        );
+    }
+
+    #[test]
+    fn incorrect_method_context_wrapper() {
+        assert_eq!(
+            Router::<(), Body>::new()
+                .with_context::<NoApi, TestDoc>()
+                .api_route("/test", Method::POST, test_route)
+                .err()
+                .unwrap()
+                .current_context(),
+            &RouteError::NoMethod
+        );
+    }
+
+    #[test]
+    fn mismatched_path_context_wrapper() {
+        assert_eq!(
+            Router::<(), Body>::new()
+                .with_context::<NoApi, TestDoc>()
+                .api_route("/context/", Method::GET, test_route)
+                .err()
+                .unwrap()
+                .current_context(),
+            &RouteError::NoMatch
+        );
+    }
+
+    #[test]
+    fn unexpected_method_connect_context_wrapper() {
+        assert_eq!(
+            Router::<(), Body>::new()
+                .with_context::<NoApi, TestDoc>()
+                .api_route("/connect", Method::CONNECT, connect_route)
+                .err()
+                .unwrap()
+                .current_context(),
+            &RouteError::UnexpectedMethod
+        );
+    }
+
+    #[test]
+    fn correct_context_raw_context_wrapper() {
+        let router = Router::<(), Body>::new()
+            .with_context::<NoApi, TestDoc>()
+            .api_route("/context/", Method::GET, test_root_route);
+
+        assert!(router.is_ok(), "Err: {:?}", router.err().unwrap());
+    }
+
+    #[test]
+    fn correct_context_version_context_wrapper() {
+        let router = Router::<(), Body>::new()
+            .with_context::<ApiContext, TestDoc>()
+            .api_route("/", Method::GET, test_root_route);
+
+        assert!(router.is_ok(), "Err: {:?}", router.err().unwrap());
+    }
+
+    #[test]
+    fn no_context_context_wrapper() {
+        assert_eq!(
+            Router::<(), Body>::new()
+                .with_context::<NoApi, TestDoc>()
+                .api_route("/", Method::GET, test_root_route)
+                .err()
+                .unwrap()
+                .current_context(),
+            &RouteError::NoRoute
+        );
+    }
+
+    #[test]
+    fn incorrect_context_context_wrapper() {
+        assert_eq!(
+            Router::<(), Body>::new()
+                .with_context::<ApiContext, TestDoc>()
+                .api_route("/contexting/", Method::GET, test_root_route)
+                .err()
+                .unwrap()
+                .current_context(),
+            &RouteError::NoRoute
+        );
+    }
+
+    #[test]
+    fn multiple_contexts_context_wrapper() {
+        let router = Router::<(), Body>::new()
+            .with_context::<ApiContext, TestDoc>()
+            .api_route("/", Method::GET, test_root_route)
+            .unwrap()
+            .new_context::<NoApi, TestDoc>()
+            .api_route("/test", Method::GET, test_route)
+            .unwrap()
+            .no_context()
+            .route("/connect", axum::routing::post(connect_route))
+            .with_context::<NoApi, TestDoc>()
+            .api_route("/test_post", Method::POST, test_post_route);
+
+        assert!(router.is_ok(), "Err: {:?}", router.err().unwrap());
+    }
+
+    #[test]
     fn correct_api() {
-        assert!(Router::<(), Body>::new()
-            .api_route::<_, _, NoApi, TestDoc>("/test", Method::GET, test_route)
-            .is_ok());
+        let router = Router::<(), Body>::new().api_route::<_, _, NoApi, TestDoc>(
+            "/test",
+            Method::GET,
+            test_route,
+        );
+        assert!(router.is_ok(), "Err: {:?}", router.err().unwrap());
     }
 
     #[test]
@@ -283,16 +474,23 @@ mod tests {
 
     #[test]
     fn correct_context_raw() {
-        assert!(Router::<(), Body>::new()
-            .api_route::<_, _, NoApi, TestDoc>("/context/", Method::GET, test_root_route)
-            .is_ok());
+        let router = Router::<(), Body>::new().api_route::<_, _, NoApi, TestDoc>(
+            "/context/",
+            Method::GET,
+            test_root_route,
+        );
+
+        assert!(router.is_ok(), "Err: {:?}", router.err().unwrap());
     }
 
     #[test]
     fn correct_context_version() {
-        assert!(Router::<(), Body>::new()
-            .api_route::<_, _, ApiContext, TestDoc>("/", Method::GET, test_root_route)
-            .is_ok());
+        let router = Router::<(), Body>::new().api_route::<_, _, ApiContext, TestDoc>(
+            "/",
+            Method::GET,
+            test_root_route,
+        );
+        assert!(router.is_ok(), "Err: {:?}", router.err().unwrap());
     }
 
     #[test]
@@ -311,7 +509,11 @@ mod tests {
     fn incorrect_context() {
         assert_eq!(
             Router::<(), Body>::new()
-                .api_route::<_, _, NoApi, TestDoc>("/contexting/", Method::GET, test_root_route)
+                .api_route::<_, _, ApiContext, TestDoc>(
+                    "/contexting/",
+                    Method::GET,
+                    test_root_route
+                )
                 .err()
                 .unwrap()
                 .current_context(),

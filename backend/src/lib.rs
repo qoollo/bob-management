@@ -1,8 +1,8 @@
-#![allow(clippy::multiple_crate_versions)]
+#![allow(clippy::multiple_crate_versions, clippy::module_name_repetitions)]
 
-#[cfg(feature = "swagger")]
+#[cfg(all(feature = "swagger", debug_assertions))]
 use axum::{routing::get, Router};
-#[cfg(feature = "swagger")]
+
 use utoipa::OpenApi;
 
 pub mod config;
@@ -12,8 +12,9 @@ pub mod models;
 pub mod router;
 pub mod services;
 
-#[cfg_attr(feature = "swagger", derive(OpenApi))]
-#[cfg_attr(feature = "swagger", openapi(
+#[derive(OpenApi)]
+#[cfg_attr(not(all(feature = "swagger", debug_assertions)), openapi())]
+#[cfg_attr(all(feature = "swagger", debug_assertions), openapi(
     paths(root),
     tags(
         (name = "bob", description = "BOB management API")
@@ -24,7 +25,7 @@ pub struct ApiDoc;
 // [TEMP]
 // TODO: Remove when the actual API will be implemented
 #[allow(clippy::unused_async)]
-#[cfg_attr(feature = "swagger", utoipa::path(
+#[cfg_attr(all(feature = "swagger", debug_assertions), utoipa::path(
         get,
         path = "/root",
         responses(
@@ -36,14 +37,13 @@ pub async fn root() -> &'static str {
 }
 
 /// Generate openapi documentation for the project
-#[cfg(feature = "swagger")]
+#[cfg(all(feature = "swagger", debug_assertions))]
 pub fn openapi_doc() -> Router {
     use utoipa_rapidoc::RapiDoc;
     use utoipa_redoc::{Redoc, Servable};
     use utoipa_swagger_ui::SwaggerUi;
 
     /* Swagger-only routes */
-    #[cfg(debug_assertions)]
     tracing::info!("Swagger ui available at /swagger-ui");
 
     /* Mount Swagger ui */
@@ -71,6 +71,6 @@ pub mod prelude {
     pub use crate::router::RouteError;
     pub use axum::response::Result as AxumResult;
     pub use error_stack::{Context, Report, Result, ResultExt};
-    #[cfg(feature = "swagger")]
+    // #[cfg(all(feature = "swagger", debug_assertions))]
     pub use utoipa::OpenApi;
 }
