@@ -216,25 +216,6 @@ where
         .attach_printable(format!("left: {operation_id}, right: {handler_name}"))
 }
 
-// TODO: Restrict input types by some trait?
-pub struct MethodWrapper<T>(T);
-
-impl Deref for MethodWrapper<PathItemType> {
-    type Target = PathItemType;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Deref for MethodWrapper<MethodFilter> {
-    type Target = MethodFilter;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 fn try_convert_path_item_type_from_method(
     value: &Method,
 ) -> std::result::Result<PathItemType, RouteError> {

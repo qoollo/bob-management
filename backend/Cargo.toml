@@ -44,7 +44,7 @@ utoipa-rapidoc = { version = "1.0", features = ["axum"], optional = true }
 cli = { path = "../cli" }
 
 ## Frontend
-# frontend = { path = "../frontend", optional = true }
+frontend = { path = "../frontend", optional = true }
 
 [features]
 default = [ "swagger", "frontend-bundle" ]
