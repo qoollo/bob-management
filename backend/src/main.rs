@@ -5,8 +5,8 @@ use backend::{
     config::ConfigExt,
     prelude::*,
     root,
-    router::{NoApi, RouterApiExt},
-    services::api_router,
+    router::{ApiV1, ApiVersion, NoApi, RouterApiExt},
+    services::api_router_v1,
     ApiDoc,
 };
 use cli::Parser;
@@ -67,11 +67,27 @@ fn router(cors: CorsLayer) -> Router {
     // Add API
     let router = router
         .with_context::<NoApi, ApiDoc>()
-        .api_route("/root", Method::GET, root)
-        .expect("Couldn't register new API route")
-        .no_context();
-    // .no_context();
+        .api_route("/root", &Method::GET, root)
+        .unwrap()
+        .expect("Couldn't register new API route");
+
     router
-        .nest("/api", api_router())
+        .nest(
+            ApiV1::to_path(),
+            api_router_v1().expect("couldn't get API routes"),
+        )
         .layer(ServiceBuilder::new().layer(cors))
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+    use backend::services::api_router_v1;
+
+    #[test]
+    fn register_routes() {
+        let router = api_router_v1();
+
+        assert!(router.is_ok(), "Err: {:?}", router.unwrap());
+    }
 }
