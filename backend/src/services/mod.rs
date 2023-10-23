@@ -1,8 +1,4 @@
-use crate::{
-    prelude::*,
-    router::{ApiV1, ContextRouter},
-    ApiDoc,
-};
+use crate::prelude::*;
 use axum::{
     response::{IntoResponse, Response},
     Router,
@@ -13,7 +9,7 @@ use thiserror::Error;
 /// Export all secured routes
 #[allow(dead_code)]
 pub fn api_router_v1() -> Result<Router<(), Body>, RouteError> {
-    ContextRouter::<ApiV1, ApiDoc>::new().unwrap()
+    Ok(Router::new())
 }
 
 /// Errors that happend during API request proccessing

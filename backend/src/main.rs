@@ -81,13 +81,11 @@ fn router(cors: CorsLayer) -> Router {
 
 #[cfg(test)]
 mod tests {
-    #![allow(clippy::unwrap_used)]
+    #![allow(clippy::expect_used)]
     use backend::services::api_router_v1;
 
     #[test]
     fn register_routes() {
-        let router = api_router_v1();
-
-        assert!(router.is_ok(), "Err: {:?}", router.unwrap());
+        let _ = api_router_v1().expect("Router has invalid API methods");
     }
 }

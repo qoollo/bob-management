@@ -59,9 +59,9 @@ where
     S: Clone + Send + Sync + 'static,
 {
     #[must_use]
-    pub fn new() -> Self {
+    pub const fn new(router: Router<S, B>) -> Self {
         Self {
-            inner: Router::<S, B>::new(),
+            inner: router,
             context: PhantomData,
             api_errors: None,
         }
@@ -126,18 +126,6 @@ where
     }
 }
 
-impl<'a, Version, Doc, S, B> Default for ContextRouter<Version, Doc, S, B>
-where
-    Version: ApiVersion<'a>,
-    Doc: OpenApi,
-    B: HttpBody + Send + 'static,
-    S: Clone + Send + Sync + 'static,
-{
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<V, D, S, B> Deref for ContextRouter<V, D, S, B> {
     type Target = Router<S, B>;
 
@@ -197,16 +185,19 @@ where
         .paths
         .get_path_item(&route)
         .ok_or(RouteError::NoRoute)
-        .attach_printable(format!("route: {route}"))?
+        .attach_printable_lazy(|| format!("route: {route}"))?
         .operations
         .get(method)
-        .ok_or(RouteError::NoMethod)?
+        .ok_or(RouteError::NoMethod)
+        .attach_printable_lazy(|| format!("route: {route}"))?
         .operation_id
         .clone()
-        .ok_or(RouteError::NoOperation)?;
+        .ok_or(RouteError::NoOperation)
+        .attach_printable_lazy(|| format!("route: {route}"))?;
     let handler_name = &[std::any::type_name::<H>()
         .rsplit_once(':')
-        .ok_or(RouteError::InvalidHandler)?
+        .ok_or(RouteError::InvalidHandler)
+        .attach_printable_lazy(|| format!("route: {route}"))?
         .1]
     .concat();
 
@@ -214,7 +205,8 @@ where
         .eq(handler_name)
         .then_some(())
         .ok_or(RouteError::NoMatch)
-        .attach_printable(format!("left: {operation_id}, right: {handler_name}"))
+        .attach_printable_lazy(|| format!("left: {operation_id}, right: {handler_name}"))
+        .attach_printable_lazy(|| format!("route: {route}"))
 }
 
 fn try_convert_path_item_type_from_method(value: &Method) -> Result<PathItemType, RouteError> {
