@@ -137,7 +137,9 @@ impl<V, D, S, B> Deref for ContextRouter<V, D, S, B> {
 pub trait RouterApiExt<S = (), B = Body, E = Infallible> {
     /// Wraps `Router` with `ApiVersion` and `OpenApi` instances into the new context to call
     /// `api_route` with said context
-    fn with_context<Version, Doc>(self) -> ContextRouter<Version, Doc, S, B>;
+    fn with_context<'a, Version: ApiVersion<'a>, Doc: OpenApi>(
+        self,
+    ) -> ContextRouter<Version, Doc, S, B>;
 }
 
 impl<S, B> RouterApiExt<S, B, Infallible> for Router<S, B>
@@ -145,12 +147,10 @@ where
     B: HttpBody + Send + 'static,
     S: Clone + Send + Sync + 'static,
 {
-    fn with_context<Version, Doc>(self) -> ContextRouter<Version, Doc, S, B> {
-        ContextRouter {
-            inner: self,
-            context: PhantomData,
-            api_errors: None,
-        }
+    fn with_context<'a, Version: ApiVersion<'a>, Doc: OpenApi>(
+        self,
+    ) -> ContextRouter<Version, Doc, S, B> {
+        ContextRouter::new(self)
     }
 }
 
