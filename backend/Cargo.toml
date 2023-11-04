@@ -1,6 +1,5 @@
 [package]
 name = "backend"
-default-run = "backend"
 description = "Bob Management GUI: Backend"
 publish = false
 keywords = [ "BOB", "Management", "GUI" ]
@@ -43,10 +42,6 @@ utoipa-rapidoc = { version = "1.0", features = ["axum"], optional = true }
 ## CLI
 cli = { path = "../cli" }
 
-## Frontend
-frontend = { path = "../frontend", optional = true }
-
 [features]
-default = [ "swagger", "frontend-bundle" ]
+default = [ "swagger" ]
 swagger = [ "dep:utoipa", "dep:utoipa-swagger-ui" , "dep:utoipa-redoc", "dep:utoipa-rapidoc" ]
-frontend-bundle = [ "dep:frontend" ]
