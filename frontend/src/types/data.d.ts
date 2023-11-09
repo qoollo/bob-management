@@ -22,3 +22,16 @@ interface NodeTableCols {
     aliens?: number;
     corruptedBlobs?: number;
 }
+
+interface ReplicaCount {
+    goodReplicas: number;
+    totalReplicas: number;
+}
+
+interface VDiskTableCols {
+    id: number;
+    vdiskid: number;
+    replicas: Replica[];
+    availability: ReplicaCount;
+    status: VDiskStatus;
+}

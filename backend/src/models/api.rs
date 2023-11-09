@@ -51,11 +51,8 @@ pub enum DiskProblem {
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub enum DiskStatus {
-    #[serde(rename = "good")]
     Good,
-    #[serde(rename = "bad")]
     Bad { problems: Vec<DiskProblem> },
-    #[serde(rename = "offline")]
     Offline,
 }
 
@@ -82,7 +79,6 @@ impl DiskStatus {
 
 /// Defines disk status names
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash, EnumIter)]
-#[serde(rename_all = "camelCase")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub enum DiskStatusName {
@@ -190,11 +186,8 @@ impl NodeProblem {
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub enum NodeStatus {
-    #[serde(rename = "good")]
     Good,
-    #[serde(rename = "bad")]
     Bad { problems: Vec<NodeProblem> },
-    #[serde(rename = "offline")]
     Offline,
 }
 
@@ -227,7 +220,6 @@ impl TypedMetrics {
 
 /// Defines node status names
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash, EnumIter)]
-#[serde(rename_all = "camelCase")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub enum NodeStatusName {
@@ -273,9 +265,7 @@ pub enum ReplicaProblem {
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub enum ReplicaStatus {
-    #[serde(rename = "good")]
     Good,
-    #[serde(rename = "offline")]
     Offline { problems: Vec<ReplicaProblem> },
 }
 
@@ -330,6 +320,7 @@ impl Add for SpaceInfo {
 /// Virtual disk Component
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[tsync]
 pub struct VDisk {
     pub id: u64,
 
@@ -347,17 +338,14 @@ pub struct VDisk {
 /// Variants - Virtual Disk status
 /// status == 'bad' when at least one of its replicas has problems
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
-#[serde(tag = "status")]
+// #[serde(tag = "status")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 // #[cfg_attr(all(feature = "swagger", debug_assertions),
 //     schema(example = json!({"status": "good"})))]
 pub enum VDiskStatus {
-    #[serde(rename = "good")]
     Good,
-    #[serde(rename = "bad")]
     Bad,
-    #[serde(rename = "offline")]
     Offline,
 }
 

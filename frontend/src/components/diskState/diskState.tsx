@@ -4,19 +4,19 @@ import React from 'react';
 import style from './diskState.module.css';
 
 const BarColor: Record<DiskStatusName, string> = {
-    good: '#5EB36B',
-    bad: '#7C817E',
-    offline: '#B3344D',
+    Good: '#5EB36B',
+    Bad: '#7C817E',
+    Offline: '#B3344D',
 };
 
 const BarLabelColor: Record<DiskStatusName, string> = {
-    good: style.totalGoodDisksLabel,
-    bad: style.totalBadDisksLabel,
-    offline: style.totalOfflineDisksLabel,
+    Good: style.totalGoodDisksLabel,
+    Bad: style.totalBadDisksLabel,
+    Offline: style.totalOfflineDisksLabel,
 };
 
 const DiskState = ({ diskCount, status }: { diskCount: Record<DiskStatusName, number>; status: DiskStatusName }) => {
-    const total = diskCount.good + diskCount.bad + diskCount.offline;
+    const total = diskCount.Good + diskCount.Bad + diskCount.Offline;
     const percent = Math.floor((diskCount[status] / total) * 100) || 0;
     return (
         <Box
@@ -67,9 +67,9 @@ const DiskBreakdown = ({ diskCount: { map: count } }: { diskCount: DiskCount }) 
             }}
         >
             <p style={{ fontSize: '16px' }}>State of the physical disks in the cluster</p>
-            <DiskState diskCount={count} status="good" />
-            <DiskState diskCount={count} status="bad" />
-            <DiskState diskCount={count} status="offline" />
+            <DiskState diskCount={count} status="Good" />
+            <DiskState diskCount={count} status="Bad" />
+            <DiskState diskCount={count} status="Offline" />
         </Box>
     );
 };

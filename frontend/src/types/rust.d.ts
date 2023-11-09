@@ -41,7 +41,7 @@ type DiskStatus__Offline = {
 
 /** Defines disk status names */
 type DiskStatusName =
-  | "good" | "bad" | "offline";
+  | "Good" | "Bad" | "Offline";
 
 interface NodeInfo {
   name: string;
@@ -83,7 +83,7 @@ type NodeStatus__Offline = {
 
 /** Defines node status names */
 type NodeStatusName =
-  | "good" | "bad" | "offline";
+  | "Good" | "Bad" | "Offline";
 
 /** [`VDisk`]'s replicas */
 interface Replica {
@@ -126,6 +126,14 @@ interface SpaceInfo {
   used_disk: number;
   /** Disk space occupied only by BOB. occupied_disk should be lesser than used_disk */
   occupied_disk: number;
+}
+
+/** Virtual disk Component */
+interface VDisk {
+  id: number;
+  status: VDiskStatus;
+  partition_count: number;
+  replicas: Array<Replica>;
 }
 
 /**

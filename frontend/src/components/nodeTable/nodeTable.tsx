@@ -11,9 +11,9 @@ import style from './nodeTable.module.css';
 axios.defaults.withCredentials = true;
 
 const DotMap: Record<NodeStatusName, string> = {
-    good: style.greendot,
-    bad: style.graydot,
-    offline: style.reddot,
+    Good: style.greendot,
+    Bad: style.graydot,
+    Offline: style.reddot,
 };
 
 const defaultRps: RPS = {
@@ -68,7 +68,7 @@ const columns: GridColDef[] = [
         headerAlign: 'center',
         headerClassName: style.greyHeader,
         renderCell: (params: GridRenderCellParams<GridValidRowModel, NodeStatusName>) => {
-            const status = params.value || 'offline';
+            const status = params.value || 'Offline';
             return (
                 <Box
                     sx={{
@@ -142,7 +142,7 @@ const NodeTable = ({ nodes }: { nodes: NodeInfo[] }) => {
                   id: i,
                   nodename: node.name,
                   hostname: node.hostname,
-                  status: node.status.status.toLowerCase(),
+                  status: node.status.status,
                   space: node.space,
                   rps: node.rps,
                   aliens: node.alienCount || 0,
