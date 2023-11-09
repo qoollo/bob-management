@@ -33,6 +33,37 @@ pub struct Disk {
     pub iops: u64,
 }
 
+impl Disk {
+    #[must_use]
+    pub fn from_metrics(
+        disk_name: String,
+        disk_path: String,
+        raw_metrics: &dto::MetricsSnapshotModel,
+        raw_space: &dto::SpaceInfo,
+    ) -> Self {
+        let status = DiskStatus::from_space_info(raw_space, &disk_name);
+        let used_space = raw_space
+            .occupied_disk_space_by_disk
+            .get(&disk_name)
+            .copied()
+            .unwrap_or_default();
+        let iops = raw_metrics
+            .metrics
+            .get(&format!("hardware.disks.{:?}_iops", disk_name))
+            .cloned()
+            .unwrap_or_default()
+            .value;
+        Self {
+            name: disk_name,
+            path: disk_path,
+            status,
+            total_space: raw_space.total_disk_space_bytes,
+            used_space,
+            iops,
+        }
+    }
+}
+
 /// Defines kind of problem on disk
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Hash)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
@@ -191,6 +222,12 @@ pub enum NodeStatus {
     Offline,
 }
 
+impl Default for NodeStatus {
+    fn default() -> Self {
+        Self::Offline
+    }
+}
+
 impl NodeStatus {
     #[must_use]
     pub fn from_problems(problems: Vec<NodeProblem>) -> Self {
@@ -347,6 +384,62 @@ pub enum VDiskStatus {
     Good,
     Bad,
     Offline,
+}
+
+#[derive(Default, Debug, Clone, Serialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[tsync]
+pub struct DetailedNode {
+    pub name: String,
+
+    pub hostname: String,
+
+    pub vdisks: Vec<VDisk>,
+
+    // #[serde(flatten)]
+    pub status: NodeStatus,
+
+    pub metrics: DetailedNodeMetrics,
+
+    pub disks: Vec<Disk>,
+}
+
+#[derive(Default, Debug, Clone, Serialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[serde(rename_all = "camelCase")]
+#[tsync]
+pub struct DetailedNodeMetrics {
+    pub rps: RPS,
+
+    pub alien_count: u64,
+
+    pub corrupted_count: u64,
+
+    pub space: SpaceInfo,
+
+    pub cpu_load: u64,
+
+    pub total_ram: u64,
+
+    pub used_ram: u64,
+
+    pub descr_amount: u64,
+}
+
+impl DetailedNodeMetrics {
+    #[must_use]
+    pub fn from_metrics(metrics: &TypedMetrics, space: SpaceInfo) -> Self {
+        Self {
+            rps: RPS::from_metrics(metrics),
+            alien_count: metrics[RawMetricEntry::BackendAlienCount].value,
+            corrupted_count: metrics[RawMetricEntry::BackendCorruptedBlobCount].value,
+            space,
+            cpu_load: metrics[RawMetricEntry::HardwareBobCpuLoad].value,
+            total_ram: metrics[RawMetricEntry::HardwareTotalRam].value,
+            used_ram: metrics[RawMetricEntry::HardwareUsedRam].value,
+            descr_amount: metrics[RawMetricEntry::HardwareDescrAmount].value,
+        }
+    }
 }
 
 /// Types of operations on BOB cluster

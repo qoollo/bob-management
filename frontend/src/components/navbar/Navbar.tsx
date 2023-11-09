@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { useStore } from '@nanostores/react';
+import { navigate } from 'astro:transitions/client';
 import BrandMark from 'public/brandmark.svg';
 import React, { useEffect, useState } from 'react';
 
@@ -40,7 +41,8 @@ const Navbar = ({ logoutRedirectTo }: { logoutRedirectTo: string }) => {
     }, [setSwitchButton, context, switchButton, path]);
 
     if (getCookie('id') === '' && path !== '/login') {
-        location.replace(logoutRedirectTo);
+        // location.replace(logoutRedirectTo);
+        navigate(logoutRedirectTo);
     }
 
     if (path === '/login') {
@@ -52,7 +54,7 @@ const Navbar = ({ logoutRedirectTo }: { logoutRedirectTo: string }) => {
             method: 'POST',
         });
         eraseCookie(cookieAuthId);
-        location.replace(logoutRedirectTo);
+        navigate(logoutRedirectTo);
     }
 
     return (

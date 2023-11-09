@@ -44,7 +44,7 @@ const columns: GridColDef[] = [
         sortable: false,
         renderCell: (params: GridRenderCellParams<GridValidRowModel, string>) => {
             return (
-                <Link href={params.value}>
+                <Link href={`/?node=${params.value}`}>
                     <b>{params.value}</b>
                 </Link>
             );

@@ -35,3 +35,28 @@ interface VDiskTableCols {
     availability: ReplicaCount;
     status: VDiskStatus;
 }
+
+interface NodePageState {
+    node: DetailedNode;
+    metrics: DetailedNodeMetrics;
+}
+
+interface DiskSpace {
+    totalSpace: number;
+    usedSpace: number;
+}
+
+interface DiskTableCols {
+    id: number;
+    name: string;
+    ops: number;
+    status: DiskStatus;
+    usedspace: DiskSpace;
+}
+
+interface NodeVDiskCol {
+    id: number;
+    vdiskid: number;
+    status: VDiskStatus;
+    partitionNumber: number;
+}
