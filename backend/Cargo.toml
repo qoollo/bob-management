@@ -10,11 +10,6 @@ edition.workspace = true
 readme.workspace = true
 repository.workspace = true
 
-[[bin]]
-name = "gen-openapi"
-path = "gen_openapi.rs"
-required-features = [ "swagger", "gen_api" ]
-
 [dependencies]
 # Backend (lib.rs)
 ## Axum related
