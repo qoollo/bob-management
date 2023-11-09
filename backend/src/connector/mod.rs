@@ -177,6 +177,7 @@ impl<Context: Send + Sync, ApiInterface: ApiNoContext<Context> + Send + Sync>
             id: Uuid::new_v4(),
             hostname: bob_data.hostname,
             main: Arc::new(client.with_context(context)),
+            // main: Arc::new(client),
             cluster,
             context_marker: PhantomData,
         })
@@ -266,7 +267,7 @@ impl<Context: Send + Sync, ApiInterface: ApiNoContext<Context> + Send + Sync>
         self.main.as_ref()
     }
 
-    pub fn cluster(&self) -> impl Iterator<Item = &Arc<ApiInterface>> {
+    pub fn cluster(&self) -> impl Iterator<Item = &Arc<T>> {
         self.cluster.values()
     }
 

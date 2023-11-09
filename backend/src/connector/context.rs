@@ -6,6 +6,7 @@ pub trait Has<T> {
     fn get_mut(&mut self) -> &mut T;
 }
 
+
 /// Context, created for each Client instance.
 #[derive(Clone, Debug, Context)]
 pub struct ClientContext {

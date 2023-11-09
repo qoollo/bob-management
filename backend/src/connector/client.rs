@@ -670,3 +670,27 @@ impl From<Response<Body>> for APIError {
         Self::InvalidStatusCode(code)
     }
 }
+/// A client that implements the API by making HTTP calls out to a server.
+#[derive(Clone)]
+pub struct RefClient<'a, S, C, Cr, I>
+where
+    S: Service<(Request<Body>, C), Response = Response<Body>> + Clone + Sync + Send + 'static,
+    S::Future: Send + 'static,
+    S::Error: Into<super::api::ServiceError> + std::fmt::Display,
+    C: Clone + Send + Sync + 'static,
+{
+    /// Inner service
+    client_service: &'a S,
+
+    /// Base path of the API
+    base_path: &'a String,
+
+    /// Context Marker
+    con_marker: PhantomData<fn(C)>,
+
+    /// Credentials Marker
+    cred_marker: PhantomData<fn(Cr)>,
+
+    /// Indices Marker
+    indices_marker: PhantomData<fn(I)>,
+}
