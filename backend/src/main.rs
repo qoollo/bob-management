@@ -1,13 +1,23 @@
 #![allow(clippy::multiple_crate_versions)]
 
-use axum::{routing::get, Router};
-use backend::{config::ConfigExt, prelude::*, root, services::api_router};
+use axum::Router;
+use backend::{
+    config::ConfigExt,
+    prelude::*,
+    root,
+    router::{ApiV1, ApiVersion, NoApi, RouterApiExt},
+    services::api_router_v1,
+    ApiDoc,
+};
 use cli::Parser;
 use error_stack::{Result, ResultExt};
-use std::path::PathBuf;
+use hyper::Method;
+use std::{env, path::PathBuf};
 use tower::ServiceBuilder;
-use tower_http::cors::CorsLayer;
+use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing::Level;
+
+const FRONTEND_FOLDER: &str = "frontend";
 
 #[tokio::main]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
@@ -28,7 +38,7 @@ async fn main() -> Result<(), AppError> {
     tracing::info!("Listening on {addr}");
 
     let app = router(cors);
-    #[cfg(feature = "swagger")]
+    #[cfg(all(feature = "swagger", debug_assertions))]
     let app = app.merge(backend::openapi_doc());
 
     axum::Server::bind(&addr)
@@ -46,10 +56,36 @@ fn init_tracer(_log_file: &Option<PathBuf>, trace_level: Level) {
 }
 
 fn router(cors: CorsLayer) -> Router {
-    // Add api
-    Router::new()
-        // Unsecured Routes
-        .route("/", get(root))
-        .nest("/api", api_router())
+    let mut frontend = env::current_exe().expect("Couldn't get current executable path.");
+    frontend.pop();
+    frontend.push(FRONTEND_FOLDER);
+    tracing::info!("serving frontend at: {frontend:?}");
+    let router = Router::new()
+        // Frontend
+        .nest_service("/", ServeDir::new(frontend));
+
+    // Add API
+    let router = router
+        .with_context::<NoApi, ApiDoc>()
+        .api_route("/root", &Method::GET, root)
+        .unwrap()
+        .expect("Couldn't register new API route");
+
+    router
+        .nest(
+            ApiV1::to_path(),
+            api_router_v1().expect("couldn't get API routes"),
+        )
         .layer(ServiceBuilder::new().layer(cors))
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::expect_used)]
+    use backend::services::api_router_v1;
+
+    #[test]
+    fn register_routes() {
+        let _ = api_router_v1().expect("Router has invalid API methods");
+    }
 }

@@ -1,3 +1,4 @@
+use crate::prelude::*;
 use axum::{
     response::{IntoResponse, Response},
     Router,
@@ -7,8 +8,8 @@ use thiserror::Error;
 
 /// Export all secured routes
 #[allow(dead_code)]
-pub fn api_router() -> Router<(), Body> {
-    Router::new()
+pub fn api_router_v1() -> Result<Router<(), Body>, RouteError> {
+    Ok(Router::new())
 }
 
 /// Errors that happend during API request proccessing
