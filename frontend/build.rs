@@ -117,8 +117,8 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
 
 #[allow(dead_code)]
 fn main() {
-    build_types();
-    build_frontend();
-    move_frontend();
-    println!("cargo:rerun-if-changed=./");
+    // build_types();
+    // build_frontend();
+    // move_frontend();
+    // println!("cargo:rerun-if-changed=./");
 }
