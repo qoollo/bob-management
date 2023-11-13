@@ -1,5 +1,5 @@
 [package]
-name = "backend"
+name = "bob-management"
 description = "Bob Management GUI: Backend"
 publish = false
 keywords = [ "BOB", "Management", "GUI" ]

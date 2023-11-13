@@ -1,5 +1,5 @@
 [alias]
-build-backend="build -p backend --features swagger --no-default-features"
+build-backend="build -p bob-management --features swagger --no-default-features"
 build-frontend="build -p frontend --no-default-features" 
-run-backend="run -p backend --features swagger --no-default-features"
+run-backend="run -p bob-management --features swagger --no-default-features"
 

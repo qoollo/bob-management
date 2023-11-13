@@ -1,7 +1,7 @@
 #![allow(clippy::multiple_crate_versions)]
 
 use axum::Router;
-use backend::{
+use bob_management::{
     config::ConfigExt,
     prelude::*,
     root,
@@ -39,7 +39,7 @@ async fn main() -> Result<(), AppError> {
 
     let app = router(cors);
     #[cfg(all(feature = "swagger", debug_assertions))]
-    let app = app.merge(backend::openapi_doc());
+    let app = app.merge(bob_management::openapi_doc());
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
@@ -82,7 +82,7 @@ fn router(cors: CorsLayer) -> Router {
 #[cfg(test)]
 mod tests {
     #![allow(clippy::expect_used)]
-    use backend::services::api_router_v1;
+    use bob_management::services::api_router_v1;
 
     #[test]
     fn register_routes() {

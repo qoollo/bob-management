@@ -18,8 +18,14 @@ RUN apt-get update \
   && rustup default $RUST_TC_VER \
   && rustup target add $BUILD_TARGET
 
+# estimate build directory
+RUN echo "$(case "$BUILD_PROFILE" in\
+  ("dev") echo "debug";;\
+  ("test") echo "debug";;\
+  ("bench") echo "release";;\
+  (*) echo "$BUILD_PROFILE";;\
+  esac)" >> ./build_profile_dir
 
-# RUN USER=root cargo new --bin bob-management
 RUN mkdir -p backend/src frontend cli/src
 RUN mkdir target
 COPY Cargo.toml Cargo.toml
@@ -34,25 +40,22 @@ RUN echo "fn main() {println!(\"if you see this, the build broke\")}" > backend/
   && echo "fn main() {println!(\"if you see this, the build broke\")}" > build.rs \
   && cargo build-backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET
 
-ADD . ./
+COPY . ./
 
-RUN \
-    # --mount=type=cache,target=/usr/local/cargo/registry \
-    # --mount=type=cache,target=/home/root/app/target \
-    cargo build-backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET \
+RUN cargo build-backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET \
     && mkdir /build_output \ 
-    && cp -f target/$BUILD_TARGET/$BUILD_PROFILE/backend /build_output/backend 
+    && cp -f target/$BUILD_TARGET/$(cat ./build_profile_dir)/bob-management /build_output/bob-management
 
 FROM node:20.6 as frontend
 
 COPY ./frontend ./frontend
 
-RUN cd frontend && yarn && yarn build
+RUN cd frontend && yarn && yarn build && mkdir /build_output && cp -r ./frontend /build_output/frontend
 
 FROM alpine:3.18
 ARG APP=/usr/src/app
 ENV TZ=Etc/UTC \
-    APP_USER=appuser
+    APP_USER=bobm
 ENV PATH="$PATH:${APP}"
 RUN addgroup -S $APP_USER \
     && adduser -S -g $APP_USER $APP_USER \
@@ -62,11 +65,12 @@ RUN addgroup -S $APP_USER \
 
 EXPOSE 9000
 
-COPY --from=backend --chown=$APP_USER:$APP_USER /build_output/backend ${APP}/backend
-COPY --from=frontend --chown=$APP_USER:$APP_USER /frontend/frontend ${APP}/frontend
+COPY --from=backend --chown=$APP_USER:$APP_USER /build_output/bob-management ${APP}/bob-management
+COPY --from=frontend --chown=$APP_USER:$APP_USER /build_output/frontend ${APP}/frontend
 
 USER $APP_USER
 WORKDIR ${APP}
 
-ENTRYPOINT ["./backend"]
+ENTRYPOINT ["./bob-management"]
+CMD ["--default"]
 
