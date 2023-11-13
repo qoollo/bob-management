@@ -16,11 +16,11 @@ path = "gen_openapi.rs"
 required-features = [ "gen_api" ]
 
 [dependencies]
-backend = { path = "../backend/", optional = true }
+bob-management = { path = "../backend/", optional = true }
 
 ## OpenAPI + Swagger
 utoipa = { version = "4.0", features = ["yaml"], optional = true }
 
 [features]
 default = [ "gen_api" ]
-gen_api = [ "dep:utoipa", "backend/swagger"]
+gen_api = [ "dep:utoipa", "bob-management/swagger"]
