@@ -3,6 +3,7 @@ use core::fmt;
 use error_stack::Context;
 use file_rotate::{suffix::AppendTimestamp, ContentLimit, FileRotate};
 use std::fmt::Display;
+use thiserror::Error;
 use tower_http::cors::CorsLayer;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{filter::LevelFilter, prelude::*};
@@ -97,19 +98,10 @@ impl LoggerExt for LoggerConfig {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum LoggerError {
+    #[error("Empty logger configuration")]
     EmptyConfig,
+    #[error("No filename specified")]
     NoFileName,
 }
-
-impl Display for LoggerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::EmptyConfig => "Empty logger configuration",
-            Self::NoFileName => "No filename specified",
-        })
-    }
-}
-
-impl Context for LoggerError {}
