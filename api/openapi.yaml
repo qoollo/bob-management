@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: backend
+  title: bob-management
   description: 'Bob Management GUI: Backend'
   contact:
     name: Romanov Simeon ArchArcheoss@proton.me
