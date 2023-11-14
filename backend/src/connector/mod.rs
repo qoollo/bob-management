@@ -267,7 +267,7 @@ impl<Context: Send + Sync, ApiInterface: ApiNoContext<Context> + Send + Sync>
         self.main.as_ref()
     }
 
-    pub fn cluster(&self) -> impl Iterator<Item = &Arc<T>> {
+    pub fn cluster(&self) -> impl Iterator<Item = &Arc<ApiInterface>> {
         self.cluster.values()
     }
 
