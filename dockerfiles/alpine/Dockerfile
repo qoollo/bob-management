@@ -42,7 +42,7 @@ RUN echo "// if you see this, the build broke" > backend/src/lib.rs \
   && echo "// if you see this, the build broke" > cli/src/lib.rs \
   && cargo build-backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET
 
-COPY . ./
+ADD . ./
 
 RUN cargo build-backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET \
     && mkdir /build_output \ 
