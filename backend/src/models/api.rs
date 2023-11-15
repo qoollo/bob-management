@@ -8,6 +8,28 @@ pub const DEFAULT_MIN_FREE_SPACE_PERCENTAGE: f64 = 0.1;
 /// Connection Data
 pub use crate::models::shared::{BobConnectionData, Credentials};
 
+/// Physical disk definition
+#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Disk {
+    /// Disk name
+    pub name: String,
+
+    /// Disk path
+    pub path: String,
+
+    /// Disk status
+    #[serde(flatten)]
+    pub status: DiskStatus,
+
+    #[serde(rename = "totalSpace")]
+    pub total_space: u64,
+
+    #[serde(rename = "usedSpace")]
+    pub used_space: u64,
+
+    pub iops: u64,
+}
+
 /// Defines kind of problem on disk
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
@@ -59,6 +81,32 @@ pub enum DiskStatusName {
     Good,
     Bad,
     Offline,
+}
+
+#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Node {
+    pub name: String,
+
+    pub hostname: String,
+
+    pub vdisks: Vec<VDisk>,
+    #[serde(flatten)]
+    pub status: NodeStatus,
+
+    #[serde(rename = "rps")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rps: Option<u64>,
+
+    #[serde(rename = "alienCount")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alien_count: Option<u64>,
+
+    #[serde(rename = "corruptedCount")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub corrupted_count: Option<u64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub space: Option<SpaceInfo>,
 }
 
 /// Defines kind of problem on Node
@@ -176,6 +224,19 @@ pub enum NodeStatusName {
     Offline,
 }
 
+/// [`VDisk`]'s replicas
+#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Replica {
+    pub node: String,
+
+    pub disk: String,
+
+    pub path: String,
+
+    #[serde(flatten)]
+    pub status: ReplicaStatus,
+}
+
 /// Reasons why Replica is offline
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
@@ -216,6 +277,20 @@ pub struct SpaceInfo {
 
     /// Disk space occupied only by BOB. occupied_disk should be lesser than used_disk
     pub occupied_disk: u64,
+}
+
+/// Virtual disk Component
+#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct VDisk {
+    pub id: u64,
+
+    #[serde(flatten)]
+    pub status: VDiskStatus,
+
+    #[serde(rename = "partitionCount")]
+    pub partition_count: u64,
+
+    pub replicas: Vec<Replica>,
 }
 
 /// Virtual disk status.
