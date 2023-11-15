@@ -1,7 +1,13 @@
-use crate::models::bob::{DiskName, IsActive};
+use axum::extract::Path;
+
+use crate::{
+    connector::dto::{MetricsSnapshotModel, NodeConfiguration},
+    models::bob::{DiskName, IsActive},
+};
 
 use super::{
-    methods::{fetch_nodes, fetch_vdisks},
+    auth::HttpClient,
+    methods::{fetch_configuration, fetch_metrics, fetch_nodes, fetch_vdisks},
     prelude::*,
 };
 
@@ -503,4 +509,78 @@ fn proccess_disks(
     }
 
     res_disks
+}
+
+/// Get Raw Metrics from Node
+///
+/// # Errors
+///
+/// This function will return an error if the server was unable to get node'a client or the request to get metrics fails
+#[cfg_attr(feature = "swagger", utoipa::path(
+        get,
+        context_path = ApiV1::to_path(),
+        path = "/nodes/{node_name}/metrics",
+        responses(
+            (status = 200, body = MetricsSnapshotModel, content_type = "application/json", description = "Node's metrics"),
+            (status = 401, description = "Unauthorized"),
+            (status = 404, description = "Node Not Found")
+        ),
+        security(("api_key" = []))
+    ))]
+pub async fn raw_metrics_by_node(
+    Extension(client): Extension<HttpBobClient>,
+    Path(node_name): Path<NodeName>,
+) -> AxumResult<Json<MetricsSnapshotModel>> {
+    let client = get_client_by_node(&client, node_name).await?;
+
+    Ok(Json(fetch_metrics(client.as_ref()).await?))
+}
+
+/// Get Configuration from Node
+///
+/// # Errors
+///
+/// This function will return an error if the server was unable to get node'a client or the request to get configuration fails
+#[cfg_attr(feature = "swagger", utoipa::path(
+        get,
+        context_path = ApiV1::to_path(),
+        path = "/nodes/{node_name}/configuration",
+        responses(
+            (status = 200, body = NodeConfiguration, content_type = "application/json", description = "Node's configuration"),
+            (status = 401, description = "Unauthorized"),
+            (status = 404, description = "Node Not Found")
+        ),
+        security(("api_key" = []))
+    ))]
+pub async fn raw_configuration_by_node(
+    Extension(client): Extension<HttpBobClient>,
+    Path(node_name): Path<NodeName>,
+) -> AxumResult<Json<NodeConfiguration>> {
+    let client = get_client_by_node(&client, node_name).await?;
+
+    Ok(Json(fetch_configuration(client.as_ref()).await?))
+}
+
+async fn get_client_by_node(
+    client: &HttpBobClient,
+    node_name: NodeName,
+) -> AxumResult<Arc<HttpClient>> {
+    let nodes = fetch_nodes(client.api_main()).await?;
+
+    let node = nodes
+        .iter()
+        .find(|node| node.name == node_name)
+        .ok_or_else(|| {
+            tracing::error!("Couldn't find specified node");
+            APIError::RequestFailed
+        })?;
+
+    client
+        .cluster_with_addr()
+        .get(&node.name)
+        .ok_or_else(|| {
+            tracing::error!("Couldn't find specified node");
+            APIError::RequestFailed.into()
+        })
+        .cloned()
 }
