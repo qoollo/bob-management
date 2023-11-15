@@ -14,4 +14,6 @@ Bob Management GUI changelog
 - Login Page, backend (#16)
 - Login Page, frontend (#17)
 - Home page, backend (#18)
+- Node list page, backend (#19)
 - Home page, frontend (#22)
+- Node list page, frontend (#23)

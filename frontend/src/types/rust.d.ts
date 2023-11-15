@@ -1,5 +1,18 @@
 /* This file is generated and managed by tsync */
 
+/** Physical disk definition */
+interface Disk {
+  /** Disk name */
+  name: string;
+  /** Disk path */
+  path: string;
+  /** Disk status */
+  status: DiskStatus;
+  totalSpace: number;
+  usedSpace: number;
+  iops: number;
+}
+
 /** Defines kind of problem on disk */
 type DiskProblem =
   | "FreeSpaceRunningOut";
@@ -12,10 +25,15 @@ type DiskProblem =
  */
 type DiskStatus =
   | DiskStatus__Good
+  | DiskStatus__Bad
   | DiskStatus__Offline;
 
 type DiskStatus__Good = {
   status: "Good";
+};
+type DiskStatus__Bad = {
+  status: "Bad";
+  problems: Array<DiskProblem>;
 };
 type DiskStatus__Offline = {
   status: "Offline";
@@ -24,6 +42,17 @@ type DiskStatus__Offline = {
 /** Defines disk status names */
 type DiskStatusName =
   | "good" | "bad" | "offline";
+
+interface NodeInfo {
+  name: string;
+  hostname: string;
+  vdisks: Array<VDisk>;
+  status: NodeStatus;
+  rps?: RPS;
+  alienCount?: number;
+  corruptedCount?: number;
+  space?: SpaceInfo;
+}
 
 /** Defines kind of problem on Node */
 type NodeProblem =
@@ -38,10 +67,15 @@ type NodeProblem =
  */
 type NodeStatus =
   | NodeStatus__Good
+  | NodeStatus__Bad
   | NodeStatus__Offline;
 
 type NodeStatus__Good = {
   status: "Good";
+};
+type NodeStatus__Bad = {
+  status: "Bad";
+  problems: Array<NodeProblem>;
 };
 type NodeStatus__Offline = {
   status: "Offline";
@@ -50,6 +84,14 @@ type NodeStatus__Offline = {
 /** Defines node status names */
 type NodeStatusName =
   | "good" | "bad" | "offline";
+
+/** [`VDisk`]'s replicas */
+interface Replica {
+  node: string;
+  disk: string;
+  path: string;
+  status: ReplicaStatus;
+}
 
 /** Reasons why Replica is offline */
 type ReplicaProblem =
@@ -63,10 +105,15 @@ type ReplicaProblem =
  * Content - List of problems on replica. 'null' if status != 'offline'
  */
 type ReplicaStatus =
-  | ReplicaStatus__Good;
+  | ReplicaStatus__Good
+  | ReplicaStatus__Offline;
 
 type ReplicaStatus__Good = {
   status: "Good";
+};
+type ReplicaStatus__Offline = {
+  status: "Offline";
+  problems: Array<ReplicaProblem>;
 };
 
 /** Disk space information in bytes */
@@ -126,3 +173,29 @@ interface Credentials {
 }
 
 type Hostname = string
+
+/** BOB's Node interface */
+interface DTONode {
+  name: string;
+  address: string;
+  vdisks?: Array<DTOVDisk>;
+}
+
+/** BOB's Node Configuration interface */
+interface DTONodeConfiguration {
+  blob_file_name_prefix?: string;
+  root_dir_name?: string;
+}
+
+/** BOB's VDisk interface */
+interface DTOVDisk {
+  id: number;
+  replicas?: Array<DTOReplica>;
+}
+
+/** BOB's Replica interface */
+interface DTOReplica {
+  node: string;
+  disk: string;
+  path: string;
+}

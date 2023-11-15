@@ -11,3 +11,14 @@ interface DashboardState {
     rpsBreakdownList: RPSList;
     dataLoaded: boolean;
 }
+
+interface NodeTableCols {
+    id: number;
+    nodename: string;
+    hostname: string;
+    status: NodeStatusName;
+    space?: SpaceInfo;
+    rps?: RPS;
+    aliens?: number;
+    corruptedBlobs?: number;
+}
