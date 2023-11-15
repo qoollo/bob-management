@@ -53,7 +53,7 @@ COPY ./frontend ./frontend
 RUN cd frontend && yarn && yarn build && mkdir /build_output && cp -r ./frontend /build_output/frontend
 
 FROM alpine:3.18
-ARG APP=/usr/src/app
+ARG APP=/home/bob-management
 ENV TZ=Etc/UTC \
     APP_USER=bobm
 ENV PATH="$PATH:${APP}"
