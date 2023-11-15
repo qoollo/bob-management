@@ -1,36 +1,12 @@
 #![allow(unused_qualifications)]
 
-use crate::connector::dto::{MetricsEntryModel, MetricsSnapshotModel};
-use crate::prelude::*;
-use strum::{EnumIter, IntoEnumIterator};
+use super::prelude::*;
 
 pub const DEFAULT_MAX_CPU: u64 = 90;
 pub const DEFAULT_MIN_FREE_SPACE: f64 = 0.1;
 
 /// Connection Data
 pub use crate::models::shared::{BobConnectionData, Credentials};
-
-/// Physical disk definition
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct Disk {
-    /// Disk name
-    pub name: String,
-
-    /// Disk path
-    pub path: String,
-
-    /// Disk status
-    #[serde(flatten)]
-    pub status: DiskStatus,
-
-    #[serde(rename = "totalSpace")]
-    pub total_space: u64,
-
-    #[serde(rename = "usedSpace")]
-    pub used_space: u64,
-
-    pub iops: u64,
-}
 
 /// Defines kind of problem on disk
 #[derive(ToSchema, Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
@@ -61,34 +37,6 @@ pub enum DiskStatusName {
     Good,
     Bad,
     Offline,
-}
-
-pub type DiskCount = TypedMap<DiskStatusName, u64>;
-
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct Node {
-    pub name: String,
-
-    pub hostname: String,
-
-    pub vdisks: Vec<VDisk>,
-    #[serde(flatten)]
-    pub status: NodeStatus,
-
-    #[serde(rename = "rps")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rps: Option<u64>,
-
-    #[serde(rename = "alienCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub alien_count: Option<u64>,
-
-    #[serde(rename = "corruptedCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub corrupted_count: Option<u64>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub space: Option<SpaceInfo>,
 }
 
 /// Defines kind of problem on Node
@@ -183,21 +131,6 @@ pub enum NodeStatusName {
     Offline,
 }
 
-pub type NodeCount = TypedMap<NodeStatusName, u64>;
-
-/// [`VDisk`]'s replicas
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct Replica {
-    pub node: String,
-
-    pub disk: String,
-
-    pub path: String,
-
-    #[serde(flatten)]
-    pub status: ReplicaStatus,
-}
-
 /// Reasons why Replica is offline
 #[derive(ToSchema, Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum ReplicaProblem {
@@ -237,20 +170,6 @@ pub struct SpaceInfo {
     pub occupied_disk: u64,
 }
 
-/// Virtual disk Component
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct VDisk {
-    pub id: u64,
-
-    #[serde(flatten)]
-    pub status: VDiskStatus,
-
-    #[serde(rename = "partitionCount")]
-    pub partition_count: u64,
-
-    pub replicas: Vec<Replica>,
-}
-
 /// Virtual disk status.
 ///
 /// Variants - Virtual Disk status
@@ -266,42 +185,6 @@ pub enum VDiskStatus {
     Offline,
 }
 
-#[derive(ToSchema, Debug, Clone, Serialize, Deserialize)]
-pub struct DetailedNode {
-    pub name: String,
-
-    pub hostname: String,
-
-    pub vdisks: Vec<VDisk>,
-
-    #[serde(flatten)]
-    pub status: NodeStatus,
-
-    pub metrics: DetailedNodeMetrics,
-
-    pub disks: Vec<Disk>,
-}
-
-#[derive(ToSchema, Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DetailedNodeMetrics {
-    pub rps: RPS,
-
-    pub alien_count: u64,
-
-    pub corrupted_count: u64,
-
-    pub space: SpaceInfo,
-
-    pub cpu_load: u64,
-
-    pub total_ram: u64,
-
-    pub used_ram: u64,
-
-    pub descr_amount: u64,
-}
-
 #[derive(
     ToSchema, Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter,
 )]
@@ -312,8 +195,6 @@ pub enum Operation {
     Exist,
     Delete,
 }
-
-pub type RPS = TypedMap<Operation, u64>;
 
 #[derive(
     ToSchema, Clone, Debug, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter,
@@ -355,46 +236,77 @@ pub enum RawMetricEntry {
     HardwareDescrAmount,
 }
 
-pub type TypedMetrics = TypedMap<RawMetricEntry, MetricsEntryModel>;
+#[allow(dead_code, clippy::expect_used)]
+fn get_map_schema<Id: IntoEnumIterator + Serialize, V: PartialSchema>() -> Object {
+    let mut res = ObjectBuilder::new();
+    for key in Id::iter() {
+        let key = serde_json::to_string(&key).expect("infallible");
+        let key = key.trim_matches('"');
+        res = res.required(key).property(key, V::schema());
+    }
+    res.build()
+}
 
-#[derive(ToSchema, Debug, Serialize, Deserialize, Clone)]
-pub struct TypedMap<Id: IntoEnumIterator + Eq + Hash, Value>(HashMap<Id, Value>);
+#[derive(ToSchema, Debug, Serialize, Clone)]
+#[aliases(RPS = TypedMap<Operation, u64>, TypedMetrics = TypedMap<RawMetricEntry, dto::MetricsEntryModel>, NodeCount = TypedMap<NodeStatusName, u64>, DiskCount = TypedMap<DiskStatusName, u64>)]
+pub struct TypedMap<Id: IntoEnumIterator + Eq + Hash, Value: PartialSchema> {
+    // FIXME: Bugged
+    // See -> https://github.com/juhaku/utoipa/issues/644
+    // #[schema(schema_with = get_map_schema::<Id, Value>)]
+    #[serde(flatten)]
+    map: HashMap<Id, Value>,
+}
 
-impl<Id: IntoEnumIterator + Eq + Hash, V> std::ops::Index<Id> for TypedMap<Id, V> {
+// pub type TypedMetrics = TypedMap<RawMetricEntry, MetricsEntryModel>;
+
+impl<Id: IntoEnumIterator + Eq + Hash, V: PartialSchema> std::ops::Index<Id> for TypedMap<Id, V> {
     type Output = V;
 
     fn index(&self, index: Id) -> &Self::Output {
-        self.0.index(&index)
+        self.map.index(&index)
     }
 }
 
 #[allow(clippy::expect_used)]
-impl<Id: IntoEnumIterator + Eq + Hash, V> std::ops::IndexMut<Id> for TypedMap<Id, V> {
+impl<Id: IntoEnumIterator + Eq + Hash, V: PartialSchema> std::ops::IndexMut<Id>
+    for TypedMap<Id, V>
+{
     fn index_mut(&mut self, index: Id) -> &mut Self::Output {
-        self.0.get_mut(&index).expect("infallible")
+        self.map.get_mut(&index).expect("infallible")
     }
 }
 
-impl<Id: IntoEnumIterator + Hash + Eq, V: Default> Default for TypedMap<Id, V> {
+impl<Id: IntoEnumIterator + Hash + Eq, V: Default + PartialSchema> Default for TypedMap<Id, V> {
     fn default() -> Self {
         let mut map = HashMap::new();
         for key in Id::iter() {
             map.insert(key, V::default());
         }
 
-        Self(map)
+        Self { map }
     }
 }
 
-impl<Id: IntoEnumIterator + Hash + Eq, V: Default> TypedMap<Id, V> {
+impl<Id: IntoEnumIterator + Hash + Eq, V: Default + PartialSchema> TypedMap<Id, V> {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 }
 
+pub trait Util<Id: IntoEnumIterator> {
+    fn key_iter() -> Id::Iterator;
+}
+
+impl<Id: IntoEnumIterator + Hash + Eq, V: Default + PartialSchema> Util<Id> for TypedMap<Id, V> {
+    fn key_iter() -> Id::Iterator {
+        Id::iter()
+    }
+}
+
 #[allow(clippy::expect_used)]
-impl From<MetricsSnapshotModel> for TypedMetrics {
-    fn from(value: MetricsSnapshotModel) -> Self {
+impl From<dto::MetricsSnapshotModel> for TypedMetrics {
+    fn from(value: dto::MetricsSnapshotModel) -> Self {
         let mut map = HashMap::new();
         let mut value = value.metrics;
         for key in RawMetricEntry::iter() {
@@ -404,7 +316,7 @@ impl From<MetricsSnapshotModel> for TypedMetrics {
             map.insert(key, value);
         }
 
-        Self(map)
+        Self { map }
     }
 }
 

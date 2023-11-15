@@ -17,15 +17,58 @@ pub mod models;
 pub mod router;
 pub mod services;
 
+struct SecurityAddon;
+
+#[cfg(all(feature = "swagger", debug_assertions))]
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "api_key",
+                SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("bob_apikey"))),
+            );
+        }
+    }
+}
+
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(OpenApi))]
 #[cfg_attr(all(feature = "swagger", debug_assertions), openapi(
-    paths(root, services::auth::login, services::auth::logout),
+    paths(
+        root,
+        services::auth::login,
+        services::auth::logout,
+        services::api::get_disks_count,
+        services::api::get_nodes_count,
+        services::api::get_rps,
+        services::api::get_space,
+    ),
     components(
-        schemas(models::shared::Credentials, models::shared::Hostname, models::shared::BobConnectionData)
+        schemas(models::shared::Credentials, models::shared::Hostname, models::shared::BobConnectionData,
+            models::api::DiskProblem,
+            models::api::DiskStatus,
+            models::api::DiskStatusName,
+            models::api::DiskCount,
+            models::api::NodeProblem,
+            models::api::NodeStatus,
+            models::api::NodeStatusName,
+            models::api::NodeCount,
+            models::api::ReplicaProblem,
+            models::api::ReplicaStatus,
+            models::api::SpaceInfo,
+            models::api::VDiskStatus,
+            models::api::Operation,
+            models::api::RPS,
+            models::api::RawMetricEntry,
+            models::api::TypedMetrics,
+            connector::dto::MetricsEntryModel,
+            connector::dto::MetricsSnapshotModel,
+            connector::dto::NodeConfiguration
+        )
     ),
     tags(
         (name = "bob", description = "BOB management API")
-    )
+    ),
+    modifiers(&SecurityAddon)
 ))]
 pub struct ApiDoc;
 
@@ -82,7 +125,7 @@ pub mod prelude {
         connector::{
             client::Client,
             context::{ClientContext, ContextWrapper, DropContextService},
-            BobClient,
+            dto, BobClient,
         },
         error::AppError,
         models::{
@@ -102,10 +145,19 @@ pub mod prelude {
     pub use error_stack::{Context, Report, Result, ResultExt};
     pub use hyper::{client::HttpConnector, Body, Method, Request, StatusCode};
     pub use serde::{Deserialize, Serialize};
-    pub use std::{collections::HashMap, hash::Hash, marker::PhantomData, str::FromStr};
+    pub use std::{
+        collections::{HashMap, HashSet},
+        hash::Hash,
+        marker::PhantomData,
+        str::FromStr,
+        sync::Arc,
+    };
     pub use thiserror::Error;
     #[cfg(all(feature = "swagger", debug_assertions))]
-    pub use utoipa::{IntoParams, OpenApi, ToSchema};
+    pub use utoipa::{
+        openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
+        IntoParams, Modify, OpenApi, PartialSchema, ToSchema,
+    };
     pub use uuid::Uuid;
 }
 

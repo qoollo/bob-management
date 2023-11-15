@@ -1,23 +1,29 @@
 mod prelude {
-    pub use crate::connector::ClientError;
-    pub use crate::prelude::*;
-    pub use axum::middleware::from_fn_with_state;
+    pub use crate::{
+        connector::{
+            api::{prelude::*, ApiNoContext},
+            ClientError,
+        },
+        models::api::*,
+        prelude::*,
+    };
     pub use axum::{
         extract::{FromRef, FromRequestParts},
         http::request::Parts,
-        middleware::Next,
+        middleware::{from_fn_with_state, Next},
         Router,
     };
-    pub use futures::stream::FuturesUnordered;
-    pub use std::sync::Arc;
+    pub use futures::{stream::FuturesUnordered, StreamExt};
     pub use tokio::sync::Mutex;
     pub use tower_sessions::Session;
 }
 
 pub mod api;
 pub mod auth;
+pub mod methods;
 
 use crate::root;
+use api::{get_disks_count, get_nodes_count, get_rps, get_space};
 use auth::{login, logout, require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore};
 use prelude::*;
 
@@ -38,6 +44,10 @@ pub fn api_router_v1(auth_state: BobAuthState) -> Result<Router<BobAuthState>, R
     Router::new()
         .with_context::<ApiV1, ApiDoc>()
         .api_route("/root", &Method::GET, root)
+        .api_route("/disks/count", &Method::GET, get_disks_count)
+        .api_route("/nodes/count", &Method::GET, get_nodes_count)
+        .api_route("/nodes/rps", &Method::GET, get_rps)
+        .api_route("/nodes/space", &Method::GET, get_space)
         .unwrap()?
         .route_layer(from_fn_with_state(auth_state, require_auth))
         .with_context::<ApiV1, ApiDoc>()

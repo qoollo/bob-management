@@ -12,7 +12,7 @@
 //!
 
 use std::collections::HashMap;
-
+use utoipa::ToSchema;
 type StdError = dyn std::error::Error;
 
 /// Function, used for parsing strings into DTOs
@@ -360,7 +360,7 @@ impl std::str::FromStr for Error {
     }
 }
 
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(ToSchema, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct MetricsEntryModel {
     #[serde(rename = "value")]
@@ -370,7 +370,13 @@ pub struct MetricsEntryModel {
     pub timestamp: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+impl utoipa::PartialSchema for MetricsEntryModel {
+    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        <MetricsEntryModel as utoipa::ToSchema>::schema().1
+    }
+}
+
+#[derive(ToSchema, Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct MetricsSnapshotModel {
     #[serde(rename = "metrics")]
@@ -486,7 +492,7 @@ impl std::str::FromStr for Node {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(ToSchema, Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct NodeConfiguration {
     #[serde(rename = "blob_file_name_prefix")]

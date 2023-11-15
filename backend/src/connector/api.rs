@@ -6,7 +6,6 @@
 //!     <https://github.com/qoollo/bob/blob/928faef96ced755b75e3396b84febad1ecaf1dae/config-examples/openapi.yaml>
 //!
 
-use super::dto::{self};
 use super::prelude::*;
 
 pub type ServiceError = Box<dyn std::error::Error + Send + Sync + 'static>;
@@ -20,6 +19,17 @@ pub enum APIError {
     InvalidStatusCode(StatusCode),
     #[error("can't read hyper response")]
     ResponseError,
+}
+
+impl IntoResponse for APIError {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            Self::RequestFailed => StatusCode::NOT_FOUND,
+            Self::InvalidStatusCode(code) => code,
+            Self::ResponseError => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+        .into_response()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]

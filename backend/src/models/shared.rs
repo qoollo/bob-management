@@ -3,6 +3,7 @@ use std::result::Result;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), schema(value_type = String))]
 pub struct Hostname(
     #[serde(
         deserialize_with = "hyper_serde::deserialize",

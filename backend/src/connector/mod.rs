@@ -4,6 +4,7 @@ mod prelude {
         context::{ContextWrapper, DropContextService, Has},
         ClientError, Connector,
     };
+    pub use crate::connector::dto::*;
     pub use crate::{models::shared::XSpanIdString, prelude::*, services::auth::HttpClient};
     pub use axum::{
         headers::{authorization::Credentials, Authorization, HeaderMapExt},
@@ -31,7 +32,7 @@ pub mod context;
 pub mod dto;
 pub mod error;
 
-pub type ApiInterface = dyn ApiNoContext<ClientContext> + Send + Sync;
+// pub type ApiInterface = dyn ApiNoContext<ClientContext> + Send + Sync;
 
 #[derive(Debug, Error)]
 pub enum ClientError {
