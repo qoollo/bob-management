@@ -85,12 +85,45 @@ paths:
       responses:
         "200":
           description: Logged out
+<<<<<<< HEAD
+=======
+  /api/v1/nodes:
+    get:
+      tags:
+        - services::api
+      summary: Returns list of all known nodes
+      description: |-
+        Returns list of all known nodes
+
+        # Errors
+
+        This function will return an error if one of the requests to get list of virtual disks or nodes fails
+      operationId: get_nodes
+      responses:
+        "200":
+          description: Node List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Node"
+        "401":
+          description: Unauthorized
+      security:
+        - api_key: []
+>>>>>>> 4b39ccb (Autogenerate API)
   /api/v1/nodes/count:
     get:
       tags:
         - services::api
       summary: Get Nodes count per Status
+<<<<<<< HEAD
       description: Get Nodes count per Status
+=======
+      description: |
+        Get Nodes count per Status
+>>>>>>> 4b39ccb (Autogenerate API)
       operationId: get_nodes_count
       responses:
         "200":
@@ -108,7 +141,12 @@ paths:
       tags:
         - services::api
       summary: Returns Total RPS on cluster
+<<<<<<< HEAD
       description: Returns Total RPS on cluster
+=======
+      description: |
+        Returns Total RPS on cluster
+>>>>>>> 4b39ccb (Autogenerate API)
       operationId: get_rps
       responses:
         "200":
@@ -126,7 +164,12 @@ paths:
       tags:
         - services::api
       summary: Return inforamtion about space on cluster
+<<<<<<< HEAD
       description: Return inforamtion about space on cluster
+=======
+      description: |
+        Return inforamtion about space on cluster
+>>>>>>> 4b39ccb (Autogenerate API)
       operationId: get_space
       responses:
         "200":
@@ -139,6 +182,42 @@ paths:
           description: Unauthorized
       security:
         - api_key: []
+<<<<<<< HEAD
+=======
+  /api/v1/root:
+    get:
+      tags:
+        - crate
+      operationId: root
+      responses:
+        "200":
+          description: Hello Bob!
+  /api/v1/vdisks:
+    get:
+      tags:
+        - services::api
+      summary: Get Virtual Disks
+      description: |-
+        Get Virtual Disks
+
+        # Errors
+
+        This function will return an error if one of the requests to get list of vdisks or nodes fails
+      operationId: get_vdisks
+      responses:
+        "200":
+          description: Virtual disks list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VDisk"
+        "401":
+          description: Unauthorized
+      security:
+        - api_key: []
+>>>>>>> 4b39ccb (Autogenerate API)
 components:
   schemas:
     BobConnectionData:
@@ -174,6 +253,7 @@ components:
       example:
         login: archeoss
         password: "12345"
+<<<<<<< HEAD
     DiskCount:
       type: object
       description: Disk count by their status
@@ -198,6 +278,44 @@ components:
         bad: 0
         good: 0
         offline: 0
+=======
+    Disk:
+      allOf:
+        - $ref: "#/components/schemas/DiskStatus"
+        - type: object
+          required:
+            - name
+            - path
+            - totalSpace
+            - usedSpace
+            - iops
+          properties:
+            iops:
+              type: integer
+              format: int64
+              minimum: 0
+            name:
+              type: string
+              description: Disk name
+            path:
+              type: string
+              description: Disk path
+            totalSpace:
+              type: integer
+              format: int64
+              minimum: 0
+            usedSpace:
+              type: integer
+              format: int64
+              minimum: 0
+      description: Physical disk definition
+    DiskCount:
+      type: object
+      additionalProperties:
+        type: integer
+        format: int64
+        minimum: 0
+>>>>>>> 4b39ccb (Autogenerate API)
     DiskProblem:
       type: string
       description: Defines kind of problem on disk
@@ -273,6 +391,45 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/MetricsEntryModel"
+<<<<<<< HEAD
+=======
+    Node:
+      allOf:
+        - $ref: "#/components/schemas/NodeStatus"
+        - type: object
+          required:
+            - name
+            - hostname
+            - vdisks
+          properties:
+            alienCount:
+              type: integer
+              format: int64
+              nullable: true
+              minimum: 0
+            corruptedCount:
+              type: integer
+              format: int64
+              nullable: true
+              minimum: 0
+            hostname:
+              type: string
+            name:
+              type: string
+            rps:
+              type: integer
+              format: int64
+              nullable: true
+              minimum: 0
+            space:
+              allOf:
+                - $ref: "#/components/schemas/SpaceInfo"
+              nullable: true
+            vdisks:
+              type: array
+              items:
+                $ref: "#/components/schemas/VDisk"
+>>>>>>> 4b39ccb (Autogenerate API)
     NodeConfiguration:
       type: object
       properties:
@@ -284,6 +441,7 @@ components:
           nullable: true
     NodeCount:
       type: object
+<<<<<<< HEAD
       description: Node count by their status
       required:
         - good
@@ -306,6 +464,12 @@ components:
         bad: 0
         good: 0
         offline: 0
+=======
+      additionalProperties:
+        type: integer
+        format: int64
+        minimum: 0
+>>>>>>> 4b39ccb (Autogenerate API)
     NodeProblem:
       type: string
       description: Defines kind of problem on Node
@@ -363,7 +527,10 @@ components:
         - offline
     Operation:
       type: string
+<<<<<<< HEAD
       description: Types of operations on BOB cluster
+=======
+>>>>>>> 4b39ccb (Autogenerate API)
       enum:
         - put
         - get
@@ -371,6 +538,7 @@ components:
         - delete
     RPS:
       type: object
+<<<<<<< HEAD
       description: Requests per second by operation
       required:
         - put
@@ -399,6 +567,12 @@ components:
         exist: 0
         get: 0
         put: 0
+=======
+      additionalProperties:
+        type: integer
+        format: int64
+        minimum: 0
+>>>>>>> 4b39ccb (Autogenerate API)
     RawMetricEntry:
       type: string
       enum:
@@ -419,6 +593,25 @@ components:
         - hardware.free_space
         - hardware.total_space
         - hardware.descr_amount
+<<<<<<< HEAD
+=======
+    Replica:
+      allOf:
+        - $ref: "#/components/schemas/ReplicaStatus"
+        - type: object
+          required:
+            - node
+            - disk
+            - path
+          properties:
+            disk:
+              type: string
+            node:
+              type: string
+            path:
+              type: string
+      description: "[`VDisk`]'s replicas"
+>>>>>>> 4b39ccb (Autogenerate API)
     ReplicaProblem:
       type: string
       description: Reasons why Replica is offline
@@ -487,6 +680,7 @@ components:
           minimum: 0
     TypedMetrics:
       type: object
+<<<<<<< HEAD
       description: Raw metrics information
       required:
         - cluster_grinder.get_count_rate
@@ -797,6 +991,32 @@ components:
         pearl.put_count_rate:
           timestamp: 0
           value: 0
+=======
+      additionalProperties:
+        $ref: "#/components/schemas/dto.MetricsEntryModel"
+    VDisk:
+      allOf:
+        - $ref: "#/components/schemas/VDiskStatus"
+        - type: object
+          required:
+            - id
+            - partitionCount
+            - replicas
+          properties:
+            id:
+              type: integer
+              format: int64
+              minimum: 0
+            partitionCount:
+              type: integer
+              format: int64
+              minimum: 0
+            replicas:
+              type: array
+              items:
+                $ref: "#/components/schemas/Replica"
+      description: Virtual disk Component
+>>>>>>> 4b39ccb (Autogenerate API)
     VDiskStatus:
       oneOf:
         - type: object
@@ -828,8 +1048,11 @@ components:
 
         Variants - Virtual Disk status
         status == 'bad' when at least one of its replicas has problems
+<<<<<<< HEAD
       example:
         status: good
+=======
+>>>>>>> 4b39ccb (Autogenerate API)
   securitySchemes:
     api_key:
       type: apiKey
