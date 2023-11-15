@@ -42,6 +42,8 @@ impl Modify for SecurityAddon {
         services::api::get_rps,
         services::api::get_space,
         services::api::get_nodes,
+        services::api::raw_metrics_by_node,
+        services::api::raw_configuration_by_node,
         services::api::get_vdisks,
     ),
     components(
