@@ -62,7 +62,7 @@ pub fn build_types() {
 
     inputs[0].push("backend");
     inputs[1].push("frontend");
-    inputs[1].push("frontend.rs");
+    inputs[1].push("bindings.rs");
     output.push("src/types/rust.d.ts");
 
     tsync::generate_typescript_defs(inputs, output, false);

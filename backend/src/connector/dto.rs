@@ -12,6 +12,8 @@
 //!
 
 use std::collections::HashMap;
+#[cfg(all(feature = "swagger", debug_assertions))]
+use utoipa::ToSchema;
 
 type StdError = dyn std::error::Error;
 
@@ -362,6 +364,7 @@ impl std::str::FromStr for Error {
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct MetricsEntryModel {
     #[serde(rename = "value")]
     pub value: u64,
@@ -370,8 +373,16 @@ pub struct MetricsEntryModel {
     pub timestamp: u64,
 }
 
+#[cfg(all(feature = "swagger", debug_assertions))]
+impl utoipa::PartialSchema for MetricsEntryModel {
+    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        <Self as utoipa::ToSchema>::schema().1
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct MetricsSnapshotModel {
     #[serde(rename = "metrics")]
     pub metrics: HashMap<String, MetricsEntryModel>,
@@ -488,6 +499,7 @@ impl std::str::FromStr for Node {
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct NodeConfiguration {
     #[serde(rename = "blob_file_name_prefix")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -774,7 +786,7 @@ impl std::str::FromStr for Replica {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct SpaceInfo {
     #[serde(rename = "total_disk_space_bytes")]
