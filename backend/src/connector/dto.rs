@@ -774,7 +774,7 @@ impl std::str::FromStr for Replica {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct SpaceInfo {
     #[serde(rename = "total_disk_space_bytes")]

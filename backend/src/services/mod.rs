@@ -8,18 +8,25 @@ mod prelude {
         middleware::Next,
         Router,
     };
+    pub use futures::stream::FuturesUnordered;
     pub use std::sync::Arc;
     pub use tokio::sync::Mutex;
     pub use tower_sessions::Session;
 }
 
+pub mod api;
 pub mod auth;
 
 use crate::root;
 use auth::{login, logout, require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore};
 use prelude::*;
 
-type BobAuthState = AuthState<BobUser, Uuid, InMemorySessionStore<Uuid, BobUser>, HttpBobClient>;
+type BobAuthState = AuthState<
+    BobUser,
+    Uuid,
+    InMemorySessionStore<Uuid, BobUser>,
+    InMemorySessionStore<Uuid, HttpBobClient>,
+>;
 
 /// Export all secured API routes
 ///

@@ -38,6 +38,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.4", features = ["v4", "serde", "fast-rng"] }
 futures = "0.3"
+strum = { version = "0.25", features = ["derive"] }
 
 ## OpenAPI + Swagger
 utoipa = { version = "4.0", features = ["yaml", "axum_extras",  "chrono", "openapi_extensions"], optional = true }

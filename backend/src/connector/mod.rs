@@ -92,7 +92,7 @@ impl HttpsBuilder {
 }
 
 #[derive(Clone)]
-pub struct BobClient<Client: ApiNoContext<ClientContext> + Send + Sync> {
+pub struct BobClient<Context: Send + Sync, Client: ApiNoContext<Context> + Send + Sync> {
     /// Unique Identifier
     id: Uuid,
 
@@ -105,17 +105,21 @@ pub struct BobClient<Client: ApiNoContext<ClientContext> + Send + Sync> {
 
     /// Clients for all known nodes
     cluster: HashMap<NodeName, Arc<Client>>,
+
+    context_marker: PhantomData<fn(Context)>,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
-impl<Client: ApiNoContext<ClientContext> + Send + Sync + Clone> std::fmt::Debug
-    for BobClient<Client>
+impl<
+        Context: Send + Sync + Has<Option<Authorization<Basic>>>,
+        Client: ApiNoContext<Context> + Send + Sync + Clone,
+    > std::fmt::Debug for BobClient<Context, Client>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let user = &self
             .main
             .context()
-            .auth_data
+            .get()
             .as_ref()
             .map_or("Unknown", |cred| cred.username());
         f.debug_struct("BobClient")
@@ -125,7 +129,9 @@ impl<Client: ApiNoContext<ClientContext> + Send + Sync + Clone> std::fmt::Debug
     }
 }
 
-impl<ApiInterface: ApiNoContext<ClientContext> + Send + Sync> BobClient<ApiInterface> {
+impl<Context: Send + Sync, ApiInterface: ApiNoContext<Context> + Send + Sync>
+    BobClient<Context, ApiInterface>
+{
     /// Creates new [`BobClient`] from [`BobConnectionData`]
     ///
     /// # Errors
@@ -171,6 +177,7 @@ impl<ApiInterface: ApiNoContext<ClientContext> + Send + Sync> BobClient<ApiInter
             hostname: bob_data.hostname,
             main: Arc::new(client.with_context(context)),
             cluster,
+            context_marker: PhantomData,
         })
     }
 
@@ -249,7 +256,7 @@ impl<ApiInterface: ApiNoContext<ClientContext> + Send + Sync> BobClient<ApiInter
     }
 
     #[must_use]
-    pub fn context(&self) -> &ClientContext {
+    pub fn context(&self) -> &Context {
         self.main.context()
     }
 

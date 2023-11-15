@@ -53,8 +53,10 @@ fn router(cors: CorsLayer) -> Router {
                 .with_expiry(tower_sessions::Expiry::OnSessionEnd),
         );
 
-    let user_store: InMemorySessionStore<Uuid, BobUser> = InMemorySessionStore::default();
-    let auth_state = AuthState::new(user_store);
+    let auth_state = AuthState::new(
+        InMemorySessionStore::default(),
+        InMemorySessionStore::default(),
+    );
 
     let mut frontend = env::current_exe().expect("Couldn't get current executable path.");
     frontend.pop();
@@ -82,8 +84,10 @@ mod tests {
     use bob_management::services::api_router_v1;
     #[test]
     fn register_routes() {
-        let user_store: InMemorySessionStore<Uuid, BobUser> = InMemorySessionStore::default();
-        let auth_state = AuthState::new(user_store);
+        let auth_state = AuthState::new(
+            InMemorySessionStore::default(),
+            InMemorySessionStore::default(),
+        );
         let _ = api_router_v1(auth_state).expect("Router has invalid API methods");
     }
 }
