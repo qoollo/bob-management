@@ -343,6 +343,43 @@ pub enum VDiskStatus {
     Offline,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+pub struct DetailedNode {
+    pub name: String,
+
+    pub hostname: String,
+
+    pub vdisks: Vec<VDisk>,
+
+    #[serde(flatten)]
+    pub status: NodeStatus,
+
+    pub metrics: DetailedNodeMetrics,
+
+    pub disks: Vec<Disk>,
+}
+
+#[derive(ToSchema, Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DetailedNodeMetrics {
+    pub rps: RPS,
+
+    pub alien_count: u64,
+
+    pub corrupted_count: u64,
+
+    pub space: SpaceInfo,
+
+    pub cpu_load: u64,
+
+    pub total_ram: u64,
+
+    pub used_ram: u64,
+
+    pub descr_amount: u64,
+}
+
 /// Types of operations on BOB cluster
 #[derive(Debug, Clone, Serialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]

@@ -1,13 +1,20 @@
 mod prelude {
-    pub use super::methods::{
-        fetch_configuration, fetch_metrics, fetch_nodes, fetch_vdisks, get_vdisk_by_id,
+    pub use super::{
+        auth::HttpClient,
+        methods::{
+            fetch_configuration, fetch_disks, fetch_metrics, fetch_node_status, fetch_nodes,
+            fetch_space_info, fetch_vdisks, get_vdisk_by_id,
+        },
     };
     pub use crate::{
         connector::{
             api::{prelude::*, ApiNoContext},
             ClientError,
         },
-        models::api::*,
+        models::{
+            api::*,
+            bob::{DiskName, IsActive},
+        },
         prelude::*,
     };
     pub use axum::{
@@ -32,7 +39,7 @@ use api::{
 use auth::{login, logout, require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore};
 use prelude::*;
 
-use self::api::{get_vdisk_info, get_vdisks_list};
+use self::api::{get_vdisk_info, get_vdisks_list, get_detailed_node_info};
 
 type BobAuthState = AuthState<
     BobUser,
@@ -58,6 +65,11 @@ pub fn api_router_v1(auth_state: BobAuthState) -> Result<Router<BobAuthState>, R
         .api_route("/nodes/:node_name", &Method::GET, get_node_info)
         .api_route("/vdisks/list", &Method::GET, get_vdisks_list)
         .api_route("/vdisks/:vdisk_id", &Method::GET, get_vdisk_info)
+        .api_route(
+            "/nodes/:node_name/detailed",
+            &Method::GET,
+            get_detailed_node_info,
+        )
         .api_route(
             "/nodes/:node_name/metrics",
             &Method::GET,
