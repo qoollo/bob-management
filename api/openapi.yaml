@@ -8,6 +8,25 @@ info:
     name: ''
   version: 0.0.0
 paths:
+  /api/v1/disks/count:
+    get:
+      tags:
+      - services::api
+      summary: Returns count of Physical Disks per status
+      description: |
+        Returns count of Physical Disks per status
+      operationId: get_disks_count
+      responses:
+        '200':
+          description: Returns a list with count of physical disks per status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiskCount'
+        '401':
+          description: Unauthorized
+      security:
+      - api_key: []
   /api/v1/login:
     post:
       tags:
@@ -67,6 +86,63 @@ paths:
       responses:
         '200':
           description: Logged out
+  /api/v1/nodes/count:
+    get:
+      tags:
+      - services::api
+      summary: Get Nodes count per Status
+      description: |
+        Get Nodes count per Status
+      operationId: get_nodes_count
+      responses:
+        '200':
+          description: Node count list per status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeCount'
+        '401':
+          description: Unauthorized
+      security:
+      - api_key: []
+  /api/v1/nodes/rps:
+    get:
+      tags:
+      - services::api
+      summary: Returns Total RPS on cluster
+      description: |
+        Returns Total RPS on cluster
+      operationId: get_rps
+      responses:
+        '200':
+          description: RPS list per operation on all nodes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RPS'
+        '401':
+          description: Unauthorized
+      security:
+      - api_key: []
+  /api/v1/nodes/space:
+    get:
+      tags:
+      - services::api
+      summary: Return inforamtion about space on cluster
+      description: |
+        Return inforamtion about space on cluster
+      operationId: get_space
+      responses:
+        '200':
+          description: Cluster Space Information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceInfo'
+        '401':
+          description: Unauthorized
+      security:
+      - api_key: []
   /api/v1/root:
     get:
       tags:
@@ -110,8 +186,296 @@ components:
       example:
         login: archeoss
         password: '12345'
+    DiskCount:
+      type: object
+      additionalProperties:
+        type: integer
+        format: int64
+        minimum: 0
+    DiskProblem:
+      type: string
+      description: Defines kind of problem on disk
+      enum:
+      - freeSpaceRunningOut
+    DiskStatus:
+      oneOf:
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - good
+      - type: object
+        required:
+        - status
+        - problems
+        properties:
+          problems:
+            type: array
+            items:
+              $ref: '#/components/schemas/DiskProblem'
+          status:
+            type: string
+            enum:
+            - bad
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - offline
+      description: |-
+        Defines disk status
+
+        Variant - Disk Status
+        Content - List of problems on disk. 'null' if status != 'bad'
+      discriminator:
+        propertyName: status
+    DiskStatusName:
+      type: string
+      description: Defines disk status names
+      enum:
+      - good
+      - bad
+      - offline
     Hostname:
-      $ref: '#/components/schemas/Uri'
+      type: string
+    MetricsEntryModel:
+      type: object
+      required:
+      - value
+      - timestamp
+      properties:
+        timestamp:
+          type: integer
+          format: int64
+          minimum: 0
+        value:
+          type: integer
+          format: int64
+          minimum: 0
+    MetricsSnapshotModel:
+      type: object
+      required:
+      - metrics
+      properties:
+        metrics:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MetricsEntryModel'
+    NodeConfiguration:
+      type: object
+      properties:
+        blob_file_name_prefix:
+          type: string
+          nullable: true
+        root_dir_name:
+          type: string
+          nullable: true
+    NodeCount:
+      type: object
+      additionalProperties:
+        type: integer
+        format: int64
+        minimum: 0
+    NodeProblem:
+      type: string
+      description: Defines kind of problem on Node
+      enum:
+      - aliensExists
+      - corruptedExists
+      - freeSpaceRunningOut
+      - virtualMemLargerThanRAM
+      - highCPULoad
+    NodeStatus:
+      oneOf:
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - good
+      - type: object
+        required:
+        - status
+        - problems
+        properties:
+          problems:
+            type: array
+            items:
+              $ref: '#/components/schemas/NodeProblem'
+          status:
+            type: string
+            enum:
+            - bad
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - offline
+      description: |-
+        Defines status of node
+
+        Variants - Node status
+
+        Content - List of problems on node. 'null' if status != 'bad'
+      discriminator:
+        propertyName: status
+    NodeStatusName:
+      type: string
+      description: Defines node status names
+      enum:
+      - good
+      - bad
+      - offline
+    Operation:
+      type: string
+      enum:
+      - put
+      - get
+      - exist
+      - delete
+    RPS:
+      type: object
+      additionalProperties:
+        type: integer
+        format: int64
+        minimum: 0
+    RawMetricEntry:
+      type: string
+      enum:
+      - cluster_grinder.get_count_rate
+      - cluster_grinder.put_count_rate
+      - cluster_grinder.exist_count_rate
+      - cluster_grinder.delete_count_rate
+      - pearl.exist_count_rate
+      - pearl.get_count_rate
+      - pearl.put_count_rate
+      - pearl.delete_count_rate
+      - backend.alien_count
+      - backend.corrupted_blob_count
+      - hardware.bob_virtual_ram
+      - hardware.total_ram
+      - hardware.used_ram
+      - hardware.bob_cpu_load
+      - hardware.free_space
+      - hardware.total_space
+      - hardware.descr_amount
+    ReplicaProblem:
+      type: string
+      description: Reasons why Replica is offline
+      enum:
+      - nodeUnavailable
+      - diskUnavailable
+    ReplicaStatus:
+      oneOf:
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - good
+      - type: object
+        required:
+        - status
+        - problems
+        properties:
+          problems:
+            type: array
+            items:
+              $ref: '#/components/schemas/ReplicaProblem'
+          status:
+            type: string
+            enum:
+            - offline
+      description: |-
+        Replica status. It's either good or offline with the reasons why it is offline
+
+        Variants - Replica status
+
+        Content - List of problems on replica. 'null' if status != 'offline'
+      discriminator:
+        propertyName: status
+    SpaceInfo:
+      type: object
+      description: Disk space information in bytes
+      required:
+      - total_disk
+      - free_disk
+      - used_disk
+      - occupied_disk
+      properties:
+        free_disk:
+          type: integer
+          format: int64
+          description: The amount of free disk space
+          minimum: 0
+        occupied_disk:
+          type: integer
+          format: int64
+          description: Disk space occupied only by BOB. occupied_disk should be lesser than used_disk
+          minimum: 0
+        total_disk:
+          type: integer
+          format: int64
+          description: Total disk space amount
+          minimum: 0
+        used_disk:
+          type: integer
+          format: int64
+          description: Used disk space amount
+          minimum: 0
+    TypedMetrics:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/dto.MetricsEntryModel'
+    VDiskStatus:
+      oneOf:
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - good
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - bad
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - offline
+      description: |-
+        Virtual disk status.
+
+        Variants - Virtual Disk status
+        status == 'bad' when at least one of its replicas has problems
+  securitySchemes:
+    api_key:
+      type: apiKey
+      in: header
+      name: bob_apikey
 tags:
 - name: bob
   description: BOB management API
