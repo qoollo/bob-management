@@ -8,8 +8,6 @@ on:
 jobs:
   gen-openapi:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/create-github-app-token@v1
         id: app-token
@@ -31,4 +29,6 @@ jobs:
       - name: "Update API schema"
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
+          commit_user_name: "qoollo-bot[bot]"
+          commit_user_email: "151071968+qoollo-bot[bot]@users.noreply.github.com"
           commit_message: "Autogenerate API"
