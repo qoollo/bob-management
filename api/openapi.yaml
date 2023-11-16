@@ -6,7 +6,6 @@ info:
     name: Romanov Simeon ArchArcheoss@proton.me
   license:
     name: ''
-  version: 0.0.0
 tags:
 - name: bob
   description: BOB management API
