@@ -7,6 +7,15 @@ info:
   license:
     name: ''
   version: 0.0.0
+paths:
+  /root:
+    get:
+      tags:
+      - crate
+      operationId: root
+      responses:
+        '200':
+          description: Hello Bob!
 tags:
 - name: bob
   description: BOB management API
