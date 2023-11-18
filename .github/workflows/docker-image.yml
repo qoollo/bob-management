@@ -19,7 +19,7 @@ jobs:
         with:
           context: .
           file: dockerfiles/alpine/Dockerfile
-          tags: bob-gui:${{ env.VERSION }}
+          tags: bob-management-gui:${{ env.VERSION }}
           build-args: |
             GIT_HASH_VAR=${{ github.sha }}
             BRANCH_TAG_VAR=${{ github.ref }}
