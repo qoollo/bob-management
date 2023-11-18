@@ -20,7 +20,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: run
-          args: -p utils --bin gen-openapi
+          args: -p utils --bin gen-openapi -- -f api/openapi.yaml
       - name: "Update API schema"
         uses: stefanzweifel/git-auto-commit-action@v4
         with:

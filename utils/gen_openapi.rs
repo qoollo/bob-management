@@ -1,6 +1,6 @@
+use clap::Parser;
 use std::fs;
 use utoipa::OpenApi;
-use clap::Parser;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
