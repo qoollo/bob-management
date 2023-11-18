@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test -p bob-management -p cli -p utils
+      - run: cargo test
   fmt-check:
     runs-on: ubuntu-latest
     steps:

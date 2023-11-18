@@ -3,8 +3,7 @@ name: update-api-schema
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
-  push:
-    branches: [main]
+
 jobs:
   gen-openapi:
     runs-on: ubuntu-latest
@@ -22,10 +21,6 @@ jobs:
         with:
           command: run
           args: -p utils --bin gen-openapi
-      - uses: actions/upload-artifact@v3
-        with:
-          name: API schemas
-          path: api/*
       - name: "Update API schema"
         uses: stefanzweifel/git-auto-commit-action@v4
         with:

@@ -17,6 +17,7 @@ required-features = [ "gen_api" ]
 
 [dependencies]
 bob-management = { path = "../backend/", optional = true }
+clap = { version = "4.4.8", features = ["derive"] }
 
 ## OpenAPI + Swagger
 utoipa = { version = "4.0", features = ["yaml"], optional = true }

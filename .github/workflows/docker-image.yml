@@ -7,7 +7,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 jobs:
-  build:
+  build-docker:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -20,3 +20,6 @@ jobs:
           context: .
           file: dockerfiles/alpine/Dockerfile
           tags: bob-gui:${{ env.VERSION }}
+          buiild-args: |
+            GIT_HASH_VAR=${{ github.sha }}
+            BRANCH_TAG_VAR=${{ github.ref }}
