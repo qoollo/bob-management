@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use thiserror::Error;
 use utoipa::OpenApi;
+
 #[cfg(all(feature = "swagger", debug_assertions))]
 use utoipa::openapi::PathItemType;
 
