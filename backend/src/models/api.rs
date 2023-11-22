@@ -360,7 +360,8 @@ pub struct DetailedNode {
     pub disks: Vec<Disk>,
 }
 
-#[derive(ToSchema, Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct DetailedNodeMetrics {
     pub rps: RPS,
