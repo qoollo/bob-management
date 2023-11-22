@@ -334,6 +334,7 @@ pub struct TypedMap<Id: IntoEnumIterator + Eq + Hash, Value: PartialSchema> {
 }
 
 // FIXME: Remove this when utoipa's bug fixed
+#[cfg(all(feature = "swagger", debug_assertions))]
 impl<
         'a,
         Id: IntoEnumIterator + Eq + Hash + Serialize,
