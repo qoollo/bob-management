@@ -188,10 +188,28 @@ components:
         password: '12345'
     DiskCount:
       type: object
-      additionalProperties:
-        type: integer
-        format: int64
-        minimum: 0
+      description: Disk count by their status
+      required:
+      - good
+      - bad
+      - offline
+      properties:
+        bad:
+          type: integer
+          format: int64
+          minimum: 0
+        good:
+          type: integer
+          format: int64
+          minimum: 0
+        offline:
+          type: integer
+          format: int64
+          minimum: 0
+      example:
+        bad: 0
+        good: 0
+        offline: 0
     DiskProblem:
       type: string
       description: Defines kind of problem on disk
@@ -278,10 +296,28 @@ components:
           nullable: true
     NodeCount:
       type: object
-      additionalProperties:
-        type: integer
-        format: int64
-        minimum: 0
+      description: Node count by their status
+      required:
+      - good
+      - bad
+      - offline
+      properties:
+        bad:
+          type: integer
+          format: int64
+          minimum: 0
+        good:
+          type: integer
+          format: int64
+          minimum: 0
+        offline:
+          type: integer
+          format: int64
+          minimum: 0
+      example:
+        bad: 0
+        good: 0
+        offline: 0
     NodeProblem:
       type: string
       description: Defines kind of problem on Node
@@ -339,6 +375,7 @@ components:
       - offline
     Operation:
       type: string
+      description: Types of operations on BOB cluster
       enum:
       - put
       - get
@@ -346,10 +383,34 @@ components:
       - delete
     RPS:
       type: object
-      additionalProperties:
-        type: integer
-        format: int64
-        minimum: 0
+      description: Requests per second by operation
+      required:
+      - put
+      - get
+      - exist
+      - delete
+      properties:
+        delete:
+          type: integer
+          format: int64
+          minimum: 0
+        exist:
+          type: integer
+          format: int64
+          minimum: 0
+        get:
+          type: integer
+          format: int64
+          minimum: 0
+        put:
+          type: integer
+          format: int64
+          minimum: 0
+      example:
+        delete: 0
+        exist: 0
+        get: 0
+        put: 0
     RawMetricEntry:
       type: string
       enum:
@@ -438,8 +499,316 @@ components:
           minimum: 0
     TypedMetrics:
       type: object
-      additionalProperties:
-        $ref: '#/components/schemas/dto.MetricsEntryModel'
+      description: Raw metrics information
+      required:
+      - cluster_grinder.get_count_rate
+      - cluster_grinder.put_count_rate
+      - cluster_grinder.exist_count_rate
+      - cluster_grinder.delete_count_rate
+      - pearl.exist_count_rate
+      - pearl.get_count_rate
+      - pearl.put_count_rate
+      - pearl.delete_count_rate
+      - backend.alien_count
+      - backend.corrupted_blob_count
+      - hardware.bob_virtual_ram
+      - hardware.total_ram
+      - hardware.used_ram
+      - hardware.bob_cpu_load
+      - hardware.free_space
+      - hardware.total_space
+      - hardware.descr_amount
+      properties:
+        backend.alien_count:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        backend.corrupted_blob_count:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        cluster_grinder.delete_count_rate:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        cluster_grinder.exist_count_rate:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        cluster_grinder.get_count_rate:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        cluster_grinder.put_count_rate:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        hardware.bob_cpu_load:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        hardware.bob_virtual_ram:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        hardware.descr_amount:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        hardware.free_space:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        hardware.total_ram:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        hardware.total_space:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        hardware.used_ram:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        pearl.delete_count_rate:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        pearl.exist_count_rate:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        pearl.get_count_rate:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+        pearl.put_count_rate:
+          type: object
+          required:
+          - value
+          - timestamp
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              minimum: 0
+            value:
+              type: integer
+              format: int64
+              minimum: 0
+      example:
+        backend.alien_count:
+          timestamp: 0
+          value: 0
+        backend.corrupted_blob_count:
+          timestamp: 0
+          value: 0
+        cluster_grinder.delete_count_rate:
+          timestamp: 0
+          value: 0
+        cluster_grinder.exist_count_rate:
+          timestamp: 0
+          value: 0
+        cluster_grinder.get_count_rate:
+          timestamp: 0
+          value: 0
+        cluster_grinder.put_count_rate:
+          timestamp: 0
+          value: 0
+        hardware.bob_cpu_load:
+          timestamp: 0
+          value: 0
+        hardware.bob_virtual_ram:
+          timestamp: 0
+          value: 0
+        hardware.descr_amount:
+          timestamp: 0
+          value: 0
+        hardware.free_space:
+          timestamp: 0
+          value: 0
+        hardware.total_ram:
+          timestamp: 0
+          value: 0
+        hardware.total_space:
+          timestamp: 0
+          value: 0
+        hardware.used_ram:
+          timestamp: 0
+          value: 0
+        pearl.delete_count_rate:
+          timestamp: 0
+          value: 0
+        pearl.exist_count_rate:
+          timestamp: 0
+          value: 0
+        pearl.get_count_rate:
+          timestamp: 0
+          value: 0
+        pearl.put_count_rate:
+          timestamp: 0
+          value: 0
     VDiskStatus:
       oneOf:
       - type: object
@@ -471,6 +840,8 @@ components:
 
         Variants - Virtual Disk status
         status == 'bad' when at least one of its replicas has problems
+      example:
+        status: good
   securitySchemes:
     api_key:
       type: apiKey
