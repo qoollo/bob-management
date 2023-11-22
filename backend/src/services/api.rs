@@ -1,7 +1,7 @@
 use axum::extract::Path;
 
 use crate::{
-    connector::dto::{MetricsSnapshotModel, NodeConfiguration},
+    connector::dto::NodeConfiguration,
     models::bob::{DiskName, IsActive},
 };
 
