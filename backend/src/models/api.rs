@@ -9,7 +9,8 @@ pub const DEFAULT_MIN_FREE_SPACE_PERCENTAGE: f64 = 0.1;
 pub use crate::models::shared::{BobConnectionData, Credentials};
 
 /// Physical disk definition
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct Disk {
     /// Disk name
     pub name: String,
@@ -280,7 +281,8 @@ pub struct SpaceInfo {
 }
 
 /// Virtual disk Component
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct VDisk {
     pub id: u64,
 
@@ -300,8 +302,8 @@ pub struct VDisk {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "status")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
-#[cfg_attr(all(feature = "swagger", debug_assertions),
-    schema(example = json!({"status": "good"})))]
+// #[cfg_attr(all(feature = "swagger", debug_assertions),
+//     schema(example = json!({"status": "good"})))]
 pub enum VDiskStatus {
     #[serde(rename = "good")]
     Good,

@@ -521,7 +521,7 @@ fn proccess_disks(
         context_path = ApiV1::to_path(),
         path = "/nodes/{node_name}/metrics",
         responses(
-            (status = 200, body = MetricsSnapshotModel, content_type = "application/json", description = "Node's metrics"),
+            (status = 200, body = TypedMetrics, content_type = "application/json", description = "Node's metrics"),
             (status = 401, description = "Unauthorized"),
             (status = 404, description = "Node Not Found")
         ),
@@ -530,10 +530,10 @@ fn proccess_disks(
 pub async fn raw_metrics_by_node(
     Extension(client): Extension<HttpBobClient>,
     Path(node_name): Path<NodeName>,
-) -> AxumResult<Json<MetricsSnapshotModel>> {
+) -> AxumResult<Json<TypedMetrics>> {
     let client = get_client_by_node(&client, node_name).await?;
 
-    Ok(Json(fetch_metrics(client.as_ref()).await?))
+    Ok(Json(fetch_metrics(client.as_ref()).await?.into()))
 }
 
 /// Get Configuration from Node

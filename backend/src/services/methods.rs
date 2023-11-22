@@ -67,7 +67,6 @@ pub async fn fetch_space_info<
 ///
 /// # Errors
 ///
-/// This function will return an error if .
 /// This function will return an error if the request to the specified client failed
 pub async fn fetch_node_status<
     Context: Send + Sync,
