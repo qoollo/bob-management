@@ -3,7 +3,7 @@
 use super::prelude::*;
 
 pub const DEFAULT_MAX_CPU: u64 = 90;
-pub const DEFAULT_MIN_FREE_SPACE: f64 = 0.1;
+pub const DEFAULT_MIN_FREE_SPACE_PERCENTAGE: f64 = 0.1;
 
 /// Connection Data
 pub use crate::models::shared::{BobConnectionData, Credentials};
@@ -30,6 +30,25 @@ pub enum DiskStatus {
     Bad(Vec<DiskProblem>),
     #[serde(rename = "offline")]
     Offline,
+}
+
+impl DiskStatus {
+    #[must_use]
+    pub fn from_space_info(space: &dto::SpaceInfo, disk_name: &str) -> Self {
+        if let Some(&occupied_space) = space.occupied_disk_space_by_disk.get(disk_name) {
+            #[allow(clippy::cast_precision_loss)]
+            if ((space.total_disk_space_bytes - occupied_space) as f64
+                / space.total_disk_space_bytes as f64)
+                < DEFAULT_MIN_FREE_SPACE_PERCENTAGE
+            {
+                Self::Bad(vec![DiskProblem::FreeSpaceRunningOut])
+            } else {
+                Self::Good
+            }
+        } else {
+            Self::Offline
+        }
+    }
 }
 
 /// Defines disk status names
@@ -61,7 +80,11 @@ pub enum NodeProblem {
 impl NodeProblem {
     #[must_use]
     pub fn default_from_metrics(node_metrics: &TypedMetrics) -> Vec<Self> {
-        Self::from_metrics(node_metrics, DEFAULT_MAX_CPU, DEFAULT_MIN_FREE_SPACE)
+        Self::from_metrics(
+            node_metrics,
+            DEFAULT_MAX_CPU,
+            DEFAULT_MIN_FREE_SPACE_PERCENTAGE,
+        )
     }
 
     #[must_use]
@@ -69,7 +92,7 @@ impl NodeProblem {
     pub fn from_metrics(
         node_metrics: &TypedMetrics,
         max_cpu: u64,
-        min_free_space: f64,
+        min_free_space_perc: f64,
     ) -> Vec<Self> {
         let mut res = vec![];
         if node_metrics[RawMetricEntry::BackendAlienCount].value != 0 {
@@ -85,7 +108,7 @@ impl NodeProblem {
             - (node_metrics[RawMetricEntry::HardwareTotalSpace].value
                 - node_metrics[RawMetricEntry::HardwareFreeSpace].value) as f64
                 / node_metrics[RawMetricEntry::HardwareTotalSpace].value as f64)
-            < min_free_space
+            < min_free_space_perc
         {
             res.push(Self::FreeSpaceRunningOut);
         }
@@ -124,6 +147,22 @@ impl NodeStatus {
         } else {
             Self::Bad(problems)
         }
+    }
+}
+
+impl TypedMetrics {
+    #[allow(clippy::cast_precision_loss)]
+    #[must_use]
+    pub fn is_bad_node(&self) -> bool {
+        self[RawMetricEntry::BackendAlienCount].value != 0
+            || self[RawMetricEntry::BackendCorruptedBlobCount].value != 0
+            || self[RawMetricEntry::HardwareBobCpuLoad].value >= DEFAULT_MAX_CPU
+            || (1.
+                - (self[RawMetricEntry::HardwareTotalSpace].value
+                    - self[RawMetricEntry::HardwareFreeSpace].value) as f64
+                    / self[RawMetricEntry::HardwareTotalSpace].value as f64)
+                < DEFAULT_MIN_FREE_SPACE_PERCENTAGE
+            || self[RawMetricEntry::HardwareBobVirtualRam] > self[RawMetricEntry::HardwareTotalRam]
     }
 }
 

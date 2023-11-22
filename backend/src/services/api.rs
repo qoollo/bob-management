@@ -2,13 +2,17 @@ use super::prelude::*;
 
 /// Returns count of Physical Disks per status
 ///
-#[cfg_attr(feature = "swagger",
+#[cfg_attr(all(feature = "swagger", debug_assertions),
     utoipa::path(
         get,
         context_path = ApiV1::to_path(),
         path = "/disks/count",
         responses(
-            (status = 200, body = DiskCount, content_type = "application/json", description = "Returns a list with count of physical disks per status"),
+            (
+                status = 200, body = DiskCount,
+                content_type = "application/json", 
+                description = "Returns a list with count of physical disks per status"
+            ),
             (status = 401, description = "Unauthorized")
         ),
         security(("api_key" = []))
@@ -65,14 +69,10 @@ pub async fn get_disks_count(Extension(client): Extension<HttpBobClient>) -> Jso
         };
         let active_disks = disks.iter().filter(|disk| disk.is_active);
         for disk in active_disks {
-            if let Some(&occupied_space) = space.occupied_disk_space_by_disk.get(&disk.name) {
-                #[allow(clippy::cast_precision_loss)]
-                match disk_status_from_space(&space, occupied_space) {
-                    DiskStatus::Good => count[DiskStatusName::Good] += 1,
-                    _ => count[DiskStatusName::Bad] += 1,
-                }
-            } else {
-                count[DiskStatusName::Offline] += 1;
+            match DiskStatus::from_space_info(&space, &disk.name) {
+                DiskStatus::Good => count[DiskStatusName::Good] += 1,
+                DiskStatus::Offline => count[DiskStatusName::Offline] += 1,
+                DiskStatus::Bad(_) => count[DiskStatusName::Bad] += 1,
             }
         }
     }
@@ -83,16 +83,21 @@ pub async fn get_disks_count(Extension(client): Extension<HttpBobClient>) -> Jso
 
 /// Get Nodes count per Status
 ///
-#[cfg_attr(feature = "swagger", utoipa::path(
+#[cfg_attr(all(feature = "swagger", debug_assertions),
+    utoipa::path(
         get,
         context_path = ApiV1::to_path(),
         path = "/nodes/count",
         responses(
-            (status = 200, body = NodeCount, content_type = "application/json", description = "Node count list per status"),
+            (
+                status = 200, body = NodeCount,
+                content_type = "application/json",
+                description = "Node count list per status"
+            ),
             (status = 401, description = "Unauthorized")
         ),
         security(("api_key" = []))
-    ))]
+))]
 pub async fn get_nodes_count(Extension(client): Extension<HttpBobClient>) -> Json<NodeCount> {
     tracing::info!("get /nodes/count : {:?}", client);
 
@@ -109,9 +114,8 @@ pub async fn get_nodes_count(Extension(client): Extension<HttpBobClient>) -> Jso
     let mut counter = 0;
     while let Some(res) = metrics.next().await {
         if let Ok(Ok(GetMetricsResponse::Metrics(metrics))) = res {
-            tracing::info!("#{counter}: metrics received successfully");
-            let metrics = Into::<TypedMetrics>::into(metrics);
-            if is_bad_node(&metrics) {
+            tracing::trace!("#{counter}: metrics received successfully");
+            if Into::<TypedMetrics>::into(metrics).is_bad_node() {
                 count[NodeStatusName::Bad] += 1;
             } else {
                 count[NodeStatusName::Good] += 1;
@@ -129,16 +133,21 @@ pub async fn get_nodes_count(Extension(client): Extension<HttpBobClient>) -> Jso
 
 /// Returns Total RPS on cluster
 ///
-#[cfg_attr(feature = "swagger", utoipa::path(
+#[cfg_attr(all(feature = "swagger", debug_assertions),
+    utoipa::path(
         get,
         context_path = ApiV1::to_path(),
         path = "/nodes/rps",
         responses(
-            (status = 200, body = RPS, content_type = "application/json", description = "RPS list per operation on all nodes"),
+            (
+                status = 200, body = RPS,
+                content_type = "application/json",
+                description = "RPS list per operation on all nodes"
+            ),
             (status = 401, description = "Unauthorized")
         ),
         security(("api_key" = []))
-    ))]
+))]
 pub async fn get_rps(Extension(client): Extension<HttpBobClient>) -> Json<RPS> {
     tracing::info!("get /nodes/rps : {:?}", client);
 
@@ -155,7 +164,6 @@ pub async fn get_rps(Extension(client): Extension<HttpBobClient>) -> Json<RPS> {
     while let Some(res) = metrics.next().await {
         if let Ok(Ok(metrics)) = res {
             tracing::info!("#{counter}: metrics received successfully");
-
             let GetMetricsResponse::Metrics(metrics) = metrics;
             let metrics = Into::<TypedMetrics>::into(metrics);
             rps[Operation::Get] += metrics[RawMetricEntry::ClusterGrinderGetCountRate].value;
@@ -174,7 +182,8 @@ pub async fn get_rps(Extension(client): Extension<HttpBobClient>) -> Json<RPS> {
 
 /// Return inforamtion about space on cluster
 ///
-#[cfg_attr(feature = "swagger", utoipa::path(
+#[cfg_attr(all(feature = "swagger", debug_assertions), 
+    utoipa::path(
         get,
         context_path = ApiV1::to_path(),
         path = "/nodes/space",
@@ -183,7 +192,7 @@ pub async fn get_rps(Extension(client): Extension<HttpBobClient>) -> Json<RPS> {
             (status = 401, description = "Unauthorized")
         ),
         security(("api_key" = []))
-    ))]
+))]
 pub async fn get_space(Extension(client): Extension<HttpBobClient>) -> Json<SpaceInfo> {
     tracing::info!("get /space : {:?}", client);
     let mut spaces: FuturesUnordered<_> = client
@@ -213,30 +222,4 @@ pub async fn get_space(Extension(client): Extension<HttpBobClient>) -> Json<Spac
     tracing::trace!("send response: {total_space:?}");
 
     Json(total_space)
-}
-
-#[allow(clippy::cast_precision_loss)]
-fn is_bad_node(node_metrics: &TypedMetrics) -> bool {
-    node_metrics[RawMetricEntry::BackendAlienCount].value != 0
-        || node_metrics[RawMetricEntry::BackendCorruptedBlobCount].value != 0
-        || node_metrics[RawMetricEntry::HardwareBobCpuLoad].value >= DEFAULT_MAX_CPU
-        || (1.
-            - (node_metrics[RawMetricEntry::HardwareTotalSpace].value
-                - node_metrics[RawMetricEntry::HardwareFreeSpace].value) as f64
-                / node_metrics[RawMetricEntry::HardwareTotalSpace].value as f64)
-            < DEFAULT_MIN_FREE_SPACE
-        || node_metrics[RawMetricEntry::HardwareBobVirtualRam]
-            > node_metrics[RawMetricEntry::HardwareTotalRam]
-}
-
-#[allow(clippy::cast_precision_loss)]
-fn disk_status_from_space(space: &dto::SpaceInfo, occupied_space: u64) -> DiskStatus {
-    if ((space.total_disk_space_bytes - occupied_space) as f64
-        / space.total_disk_space_bytes as f64)
-        < DEFAULT_MIN_FREE_SPACE
-    {
-        DiskStatus::Bad(vec![DiskProblem::FreeSpaceRunningOut])
-    } else {
-        DiskStatus::Good
-    }
 }
