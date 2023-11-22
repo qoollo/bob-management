@@ -1,6 +1,11 @@
 use super::prelude::*;
 
-pub async fn request_metrics<
+/// Fetches metrics from `ApiNoContext` instance.
+///
+/// # Errors
+///
+/// This function will return an error if the request to the specified client failed
+pub async fn fetch_metrics<
     Context: Send + Sync,
     ApiInterface: ApiNoContext<Context> + Send + Sync,
 >(
@@ -14,7 +19,13 @@ pub async fn request_metrics<
     Ok(metrics)
 }
 
-pub async fn request_vdisks<
+/// Fetches vdisks information from `ApiNoContext` instance.
+///
+/// # Errors
+///
+/// This function will return an error if the request to the specified client failed or the invalid
+/// status code was received
+pub async fn fetch_vdisks<
     Context: Send + Sync,
     ApiInterface: ApiNoContext<Context> + Send + Sync,
 >(
@@ -32,7 +43,13 @@ pub async fn request_vdisks<
     Ok(virt_disks)
 }
 
-pub async fn request_space<
+/// Fetches space information from `ApiNoContext` instance.
+///
+/// # Errors
+///
+/// This function will return an error if .
+/// This function will return an error if the request to the specified client failed
+pub async fn fetch_space_info<
     Context: Send + Sync,
     ApiInterface: ApiNoContext<Context> + Send + Sync,
 >(
@@ -46,7 +63,13 @@ pub async fn request_space<
     Ok(space)
 }
 
-pub async fn request_status<
+/// Fetches node status information from `ApiNoContext` instance.
+///
+/// # Errors
+///
+/// This function will return an error if .
+/// This function will return an error if the request to the specified client failed
+pub async fn fetch_node_status<
     Context: Send + Sync,
     ApiInterface: ApiNoContext<Context> + Send + Sync,
 >(
@@ -61,7 +84,13 @@ pub async fn request_status<
     Ok(node_status)
 }
 
-pub async fn request_disks<
+/// Fetches disk information on some node from `ApiNoContext` instance.
+///
+/// # Errors
+///
+/// This function will return an error if the request to the specified client failed or the invalid
+/// status code was received
+pub async fn fetch_disks<
     Context: Send + Sync,
     ApiInterface: ApiNoContext<Context> + Send + Sync,
 >(
@@ -83,7 +112,13 @@ pub async fn request_disks<
     Ok(disks)
 }
 
-pub async fn request_configuration<
+/// Fetches configuration from `ApiNoContext` instance.
+///
+/// # Errors
+///
+/// This function will return an error if the request to the specified client failed or the invalid
+/// status code was received
+pub async fn fetch_configuration<
     Context: Send + Sync,
     ApiInterface: ApiNoContext<Context> + Send + Sync,
 >(
@@ -102,7 +137,13 @@ pub async fn request_configuration<
     Ok(configuration)
 }
 
-pub async fn request_nodes<
+/// Fetches all known nodes information from `ApiNoContext` instance.
+///
+/// # Errors
+///
+/// This function will return an error if the request to the specified client failed or the invalid
+/// status code was received
+pub async fn fetch_nodes<
     Context: Send + Sync,
     ApiInterface: ApiNoContext<Context> + Send + Sync,
 >(

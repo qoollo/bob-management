@@ -9,7 +9,8 @@ pub const DEFAULT_MIN_FREE_SPACE: f64 = 0.1;
 pub use crate::models::shared::{BobConnectionData, Credentials};
 
 /// Defines kind of problem on disk
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum DiskProblem {
     #[serde(rename = "freeSpaceRunningOut")]
     FreeSpaceRunningOut,
@@ -19,8 +20,9 @@ pub enum DiskProblem {
 ///
 /// Variant - Disk Status
 /// Content - List of problems on disk. 'null' if status != 'bad'
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
 #[serde(tag = "status", content = "problems")]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum DiskStatus {
     #[serde(rename = "good")]
     Good,
@@ -31,8 +33,9 @@ pub enum DiskStatus {
 }
 
 /// Defines disk status names
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash, EnumIter)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum DiskStatusName {
     Good,
     Bad,
@@ -40,7 +43,8 @@ pub enum DiskStatusName {
 }
 
 /// Defines kind of problem on Node
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum NodeProblem {
     #[serde(rename = "aliensExists")]
     AliensExists,
@@ -100,8 +104,9 @@ impl NodeProblem {
 /// Variants - Node status
 ///
 /// Content - List of problems on node. 'null' if status != 'bad'
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
 #[serde(tag = "status", content = "problems")]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum NodeStatus {
     #[serde(rename = "good")]
     Good,
@@ -123,8 +128,9 @@ impl NodeStatus {
 }
 
 /// Defines node status names
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash, EnumIter)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum NodeStatusName {
     Good,
     Bad,
@@ -132,7 +138,8 @@ pub enum NodeStatusName {
 }
 
 /// Reasons why Replica is offline
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum ReplicaProblem {
     #[serde(rename = "nodeUnavailable")]
     NodeUnavailable,
@@ -145,8 +152,9 @@ pub enum ReplicaProblem {
 /// Variants - Replica status
 ///
 /// Content - List of problems on replica. 'null' if status != 'offline'
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "status", content = "problems")]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum ReplicaStatus {
     #[serde(rename = "good")]
     Good,
@@ -155,7 +163,8 @@ pub enum ReplicaStatus {
 }
 
 /// Disk space information in bytes
-#[derive(ToSchema, Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct SpaceInfo {
     /// Total disk space amount
     pub total_disk: u64,
@@ -174,8 +183,11 @@ pub struct SpaceInfo {
 ///
 /// Variants - Virtual Disk status
 /// status == 'bad' when at least one of its replicas has problems
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "status")]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[cfg_attr(all(feature = "swagger", debug_assertions),
+    schema(example = json!({"status": "good"})))]
 pub enum VDiskStatus {
     #[serde(rename = "good")]
     Good,
@@ -185,9 +197,9 @@ pub enum VDiskStatus {
     Offline,
 }
 
-#[derive(
-    ToSchema, Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter,
-)]
+/// Types of operations on BOB cluster
+#[derive(Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[serde(rename_all = "camelCase")]
 pub enum Operation {
     Put,
@@ -196,9 +208,8 @@ pub enum Operation {
     Delete,
 }
 
-#[derive(
-    ToSchema, Clone, Debug, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter,
-)]
+#[derive(Clone, Debug, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum RawMetricEntry {
     #[serde(rename = "cluster_grinder.get_count_rate")]
     ClusterGrinderGetCountRate,
@@ -237,27 +248,102 @@ pub enum RawMetricEntry {
 }
 
 #[allow(dead_code, clippy::expect_used)]
-fn get_map_schema<Id: IntoEnumIterator + Serialize, V: PartialSchema>() -> Object {
+#[cfg(all(feature = "swagger", debug_assertions))]
+fn get_map_schema<Id: IntoEnumIterator + Serialize, V: PartialSchema + Default + Serialize>(
+) -> Object {
     let mut res = ObjectBuilder::new();
+    let mut example = serde_json::Map::new();
     for key in Id::iter() {
         let key = serde_json::to_string(&key).expect("infallible");
         let key = key.trim_matches('"');
         res = res.required(key).property(key, V::schema());
+        example.insert(
+            key.to_string(),
+            serde_json::to_value(V::default()).expect("infallible"),
+        );
     }
-    res.build()
+    res.example(serde_json::to_value(example).ok()).build()
 }
 
-#[derive(ToSchema, Debug, Serialize, Clone)]
-#[aliases(RPS = TypedMap<Operation, u64>, TypedMetrics = TypedMap<RawMetricEntry, dto::MetricsEntryModel>, NodeCount = TypedMap<NodeStatusName, u64>, DiskCount = TypedMap<DiskStatusName, u64>)]
+// #[cfg(not(all(feature = "swagger", debug_assertions)))]
+pub type RPS = TypedMap<Operation, u64>;
+// #[cfg(not(all(feature = "swagger", debug_assertions)))]
+pub type TypedMetrics = TypedMap<RawMetricEntry, dto::MetricsEntryModel>;
+// #[cfg(not(all(feature = "swagger", debug_assertions)))]
+pub type NodeCount = TypedMap<NodeStatusName, u64>;
+// #[cfg(not(all(feature = "swagger", debug_assertions)))]
+pub type DiskCount = TypedMap<DiskStatusName, u64>;
+
+#[derive(Debug, Serialize, Clone)]
+// #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+// #[cfg_attr(all(feature = "swagger", debug_assertions),
+//     aliases(
+//         RPS = TypedMap<Operation, u64>,
+//         TypedMetrics = TypedMap<RawMetricEntry, dto::MetricsEntryModel>,
+//         NodeCount = TypedMap<NodeStatusName, u64>,
+//         DiskCount = TypedMap<DiskStatusName, u64>
+//     )
+// )]
+// #[cfg_attr(all(feature = "swagger", debug_assertions),
+//     schema(example = json!({"put": 7, "get": 8, "delete": 2, "exist": 3})))]
 pub struct TypedMap<Id: IntoEnumIterator + Eq + Hash, Value: PartialSchema> {
-    // FIXME: Bugged
+    // FIXME: Bugged; Remove manual impl's of `ToSchema` and uncomment when fixed
     // See -> https://github.com/juhaku/utoipa/issues/644
     // #[schema(schema_with = get_map_schema::<Id, Value>)]
     #[serde(flatten)]
     map: HashMap<Id, Value>,
 }
 
-// pub type TypedMetrics = TypedMap<RawMetricEntry, MetricsEntryModel>;
+// FIXME: Remove this when utoipa's bug fixed
+impl<
+        'a,
+        Id: IntoEnumIterator + Eq + Hash + Serialize,
+        Value: PartialSchema + Default + Serialize,
+    > utoipa::ToSchema<'a> for TypedMap<Id, Value>
+{
+    fn schema() -> (
+        &'a str,
+        utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
+    ) {
+        (
+            std::any::type_name::<Self>(),
+            get_map_schema::<Id, Value>().into(),
+        )
+    }
+
+    fn aliases() -> Vec<(&'a str, utoipa::openapi::schema::Schema)> {
+        vec![
+            ("RPS", {
+                let mut schema = get_map_schema::<Operation, u64>();
+                let _ = schema
+                    .description
+                    .insert("Requests per second by operation".to_string());
+                schema.into()
+            }),
+            ("TypedMetrics", {
+                let mut schema = get_map_schema::<RawMetricEntry, dto::MetricsEntryModel>();
+                let _ = schema
+                    .description
+                    .insert("Raw metrics information".to_string());
+                schema.into()
+            }),
+            ("NodeCount", {
+                let mut schema = get_map_schema::<NodeStatusName, u64>();
+                let _ = schema
+                    .description
+                    .insert("Node count by their status".to_string());
+                schema.into()
+            }),
+            ("DiskCount", {
+                let mut schema = get_map_schema::<DiskStatusName, u64>();
+                let _ = schema
+                    .description
+                    .insert("Disk count by their status".to_string());
+                schema.into()
+            }),
+        ]
+    }
+}
 
 impl<Id: IntoEnumIterator + Eq + Hash, V: PartialSchema> std::ops::Index<Id> for TypedMap<Id, V> {
     type Output = V;

@@ -77,13 +77,16 @@ pub struct BobConnectionData {
     pub hostname: Hostname,
 
     /// [Optional] Credentials used for BOB authentication
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
 
 /// Optional auth credentials for a BOB cluster
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize)]
-#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize)]
+#[cfg_attr(
+    all(feature = "swagger", debug_assertions),
+    derive(IntoParams, ToSchema)
+)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), schema(example = json!({"login": "archeoss", "password": "12345"})))]
 pub struct Credentials {
     /// Login used during auth
