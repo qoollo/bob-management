@@ -1,15 +1,13 @@
-use axum::extract::Path;
-
-use crate::{
-    connector::dto::NodeConfiguration,
-    models::bob::{DiskName, IsActive},
-};
-
 use super::{
     auth::HttpClient,
     methods::{fetch_configuration, fetch_metrics, fetch_nodes, fetch_vdisks},
     prelude::*,
 };
+use crate::{
+    connector::dto::NodeConfiguration,
+    models::bob::{DiskName, IsActive},
+};
+use axum::extract::{Path, Query};
 
 /// Returns count of Physical Disks per status
 #[cfg_attr(all(feature = "swagger", debug_assertions),
@@ -210,7 +208,7 @@ pub async fn get_space(Extension(client): Extension<HttpBobClient>) -> Json<Spac
 
     Json(total_space)
 }
-
+// TODO: return simple list of nodes and simplified version of detailed_nodes
 /// Returns list of all known nodes
 ///
 /// # Errors
@@ -221,14 +219,53 @@ pub async fn get_space(Extension(client): Extension<HttpBobClient>) -> Json<Spac
         context_path = ApiV1::to_path(),
         path = "/nodes",
         responses(
-            (status = 200, body = Vec<Node>, content_type = "application/json", description = "Node List"),
+            (status = 200, body = PaginatedResponse<Node>, content_type = "application/json", description = "Node List"),
             (status = 401, description = "Unauthorized")
         ),
         security(("api_key" = []))
     ))]
-pub async fn get_nodes(Extension(client): Extension<HttpBobClient>) -> AxumResult<Json<Vec<Node>>> {
+pub async fn get_nodes(
+    Extension(client): Extension<HttpBobClient>,
+    Query(params): Query<Option<Pagination>>,
+) -> AxumResult<Json<PaginatedResponse<Node>>> {
     tracing::info!("get /nodes : {client:?}");
 
+    let len = client.cluster_with_addr().len();
+    Ok(if let Some(page_params) = params {
+        Json(PaginatedResponse::new(
+            batch_get_nodes(client, page_params.clone()).await?,
+            len,
+            page_params.page,
+            page_params.per_page,
+        ))
+    } else {
+        Json(PaginatedResponse::new(
+            dump_get_nodes(client).await?,
+            len,
+            1,
+            1,
+        ))
+    })
+}
+
+pub async fn batch_get_nodes(
+    client: BobClient<
+        ClientContext,
+        ContextWrapper<
+            Client<
+                DropContextService<hyper::Client<HttpConnector>, ClientContext>,
+                ClientContext,
+                Basic,
+            >,
+            ClientContext,
+        >,
+    >,
+    page_params: Pagination,
+) -> AxumResult<Vec<Node>> {
+    todo!()
+}
+
+pub async fn dump_get_nodes(client: HttpBobClient) -> AxumResult<Vec<Node>> {
     let mut metrics: FuturesUnordered<_> = client
         .cluster()
         .map(move |node| {
@@ -317,7 +354,7 @@ pub async fn get_nodes(Extension(client): Extension<HttpBobClient>) -> AxumResul
     }
     tracing::trace!("send response: {res:?}");
 
-    Ok(Json(res.values().cloned().collect()))
+    Ok(res.values().cloned().collect())
 }
 
 /// Get Virtual Disks
@@ -471,44 +508,6 @@ async fn process_replica(
 
 async fn is_node_online(client: &HttpBobClient, node: &dto::Node) -> bool {
     (client.probe_socket(&node.name).await).map_or(false, |code| code == StatusCode::OK)
-}
-
-fn proccess_disks(
-    disks: &[dto::DiskState],
-    space: &dto::SpaceInfo,
-    metrics: &dto::MetricsSnapshotModel,
-) -> Vec<Disk> {
-    let mut res_disks = vec![];
-    let mut visited_disks = HashSet::new();
-    for disk in disks {
-        if !visited_disks.insert(disk.name.clone()) {
-            tracing::warn!(
-                "disk {} with path {} duplicated, skipping...",
-                disk.name,
-                disk.path
-            );
-            continue;
-        }
-        res_disks.push(Disk {
-            name: disk.name.clone(),
-            path: disk.path.clone(),
-            status: DiskStatus::from_space_info(space, &disk.name),
-            total_space: space.total_disk_space_bytes,
-            used_space: space
-                .occupied_disk_space_by_disk
-                .get(&disk.name.clone())
-                .copied()
-                .unwrap_or_default(),
-            iops: metrics
-                .metrics
-                .get(&format!("hardware.disks.{:?}_iops", disk.name))
-                .cloned()
-                .unwrap_or_default()
-                .value,
-        });
-    }
-
-    res_disks
 }
 
 /// Get Raw Metrics from Node

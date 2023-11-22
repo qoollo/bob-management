@@ -10,8 +10,9 @@ mod prelude {
         headers::{authorization::Credentials, Authorization, HeaderMapExt},
         http::{HeaderName, HeaderValue},
     };
-    pub use futures::StreamExt;
-    pub use hyper::{service::Service, Response, Uri};
+    pub use futures::{Stream, StreamExt};
+    pub use hyper::{body::Bytes, service::Service, Response, Uri};
+    pub use std::collections::BTreeMap;
     pub use std::{
         str::FromStr,
         sync::Arc,
@@ -105,7 +106,7 @@ pub struct BobClient<Context: Send + Sync, Client: ApiNoContext<Context> + Send 
     main: Arc<Client>,
 
     /// Clients for all known nodes
-    cluster: HashMap<NodeName, Arc<Client>>,
+    cluster: BTreeMap<NodeName, Arc<Client>>,
 
     context_marker: PhantomData<fn(Context)>,
 }
@@ -168,7 +169,7 @@ impl<Context: Send + Sync, ApiInterface: ApiNoContext<Context> + Send + Sync>
                 .attach_printable(format!("Hostname: {}", hostname.to_string()))?
         };
 
-        let cluster: HashMap<NodeName, Arc<_>> = nodes
+        let cluster: BTreeMap<NodeName, Arc<_>> = nodes
             .iter()
             .filter_map(|node| HttpClient::from_node(node, &bob_data.hostname, context.clone()))
             .collect();
@@ -276,7 +277,7 @@ impl<Context: Send + Sync, ApiInterface: ApiNoContext<Context> + Send + Sync>
     }
 
     #[must_use]
-    pub const fn cluster_with_addr(&self) -> &HashMap<NodeName, Arc<ApiInterface>> {
+    pub const fn cluster_with_addr(&self) -> &BTreeMap<NodeName, Arc<ApiInterface>> {
         &self.cluster
     }
 

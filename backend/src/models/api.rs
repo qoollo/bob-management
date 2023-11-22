@@ -555,6 +555,61 @@ impl From<dto::MetricsSnapshotModel> for TypedMetrics {
     }
 }
 
+#[derive(IntoParams, Deserialize, Clone)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+pub struct Pagination {
+    #[serde(default)]
+    pub page: usize,
+    #[serde(default)]
+    pub per_page: usize,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+pub struct PaginatedResponse<T> {
+    /// The page of data being returned
+    pub data: Vec<T>,
+    /// The number of rows returned in the current page
+    pub count: usize,
+    /// The total number of rows available
+    pub total: usize,
+    /// The current page being returned
+    pub page: usize,
+    /// The number of pages available
+    pub page_count: usize,
+}
+
+impl<T> PaginatedResponse<T> {
+    /// Create a new `PaginatedResponse`
+    #[must_use]
+    pub fn new(data: Vec<T>, total: usize, page: usize, page_size: usize) -> Self {
+        let count = data.len().try_into().unwrap_or(0);
+        let page_count = total / page_size + usize::from(total % page_size != 0);
+
+        Self {
+            data,
+            count,
+            total,
+            page,
+            page_count,
+        }
+    }
+
+    /// Transform the data contained in the `PaginatedResponse`
+    pub fn map<B, F>(self, func: F) -> PaginatedResponse<B>
+    where
+        F: Fn(T) -> B,
+    {
+        PaginatedResponse::<B> {
+            data: self.data.into_iter().map(func).collect(),
+            count: self.count,
+            total: self.total,
+            page: self.page,
+            page_count: self.page_count,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
