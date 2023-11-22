@@ -227,7 +227,8 @@ pub enum NodeStatusName {
 }
 
 /// [`VDisk`]'s replicas
-#[derive(ToSchema, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct Replica {
     pub node: String,
 
