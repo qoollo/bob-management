@@ -34,12 +34,10 @@ COPY backend/Cargo.toml backend/Cargo.toml
 COPY utils/Cargo.toml utils/Cargo.toml
 COPY frontend/Cargo.toml frontend/Cargo.toml
 COPY .cargo .cargo
-RUN echo "fn main() {println!(\"if you see this, the build broke\")}" > backend/src/lib.rs \
+RUN echo "// if you see this, the build broke" > backend/src/lib.rs \
   && echo "fn main() {println!(\"if you see this, the build broke\")}" > backend/src/main.rs \
   && echo "fn main() {println!(\"if you see this, the build broke\")}" > frontend/build.rs \
-  && echo "fn main() {println!(\"if you see this, the build broke\")}" > cli/src/lib.rs \
-  && echo "fn main() {println!(\"if you see this, the build broke\")}" > utils/src/lib.rs \
-  && echo "fn main() {println!(\"if you see this, the build broke\")}" > build.rs \
+  && echo "// if you see this, the build broke" > cli/src/lib.rs \
   && cargo build-backend --profile=$BUILD_PROFILE --target=$BUILD_TARGET
 
 COPY . ./
@@ -52,7 +50,11 @@ FROM node:20.6 as frontend
 
 COPY ./frontend ./frontend
 
-RUN cd frontend && yarn && yarn build && mkdir /build_output && cp -r ./frontend /build_output/frontend
+RUN cd frontend \
+  && yarn \
+  && yarn build \
+  && mkdir /build_output \
+  && cp -r ./frontend /build_output/frontend
 
 FROM alpine:3.18
 ARG APP=/home/bob-management
