@@ -128,11 +128,6 @@ impl FileLogger {
     pub const fn default_log_size() -> usize {
         10usize.pow(6)
     }
-
-    #[must_use]
-    pub const fn enabled_default() -> bool {
-        false
-    }
 }
 
 impl StdoutLogger {

@@ -1,12 +1,9 @@
 use cli::{Config, LoggerConfig};
-use core::fmt;
-use error_stack::Context;
 use file_rotate::{suffix::AppendTimestamp, ContentLimit, FileRotate};
-use std::fmt::Display;
 use thiserror::Error;
 use tower_http::cors::CorsLayer;
-use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::{filter::LevelFilter, prelude::*};
+use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
+use tracing_subscriber::{filter::LevelFilter, prelude::*, util::SubscriberInitExt};
 
 #[allow(clippy::module_name_repetitions)]
 pub trait ConfigExt {
@@ -32,6 +29,28 @@ pub trait LoggerExt {
     ///
     /// Function returns error if `log_file` is not specified
     fn init_file_rotate(&self) -> Result<FileRotate<AppendTimestamp>, LoggerError>;
+
+    /// Returns non-blocking file writer
+    ///
+    /// Also returns [`WorkerGuard`] for off-thread writing.
+    /// Should not be dropped.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the file logger configuration is empty, file logging
+    /// is disabled or logs filename is not specified
+    fn non_blocking_file_writer(&self) -> Result<(NonBlocking, WorkerGuard), LoggerError>;
+
+    /// Returns non-blocking stdout writer
+    ///
+    /// Also returns [`WorkerGuard`] for off-thread writing.
+    /// Should not be dropped.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the stdout logger configuration is empty or stdout logging
+    /// is disabled
+    fn non_blocking_stdout_writer(&self) -> Result<(NonBlocking, WorkerGuard), LoggerError>;
 }
 
 impl ConfigExt for Config {
@@ -45,43 +64,27 @@ impl ConfigExt for Config {
 impl LoggerExt for LoggerConfig {
     fn init_logger(&self) -> Result<Vec<WorkerGuard>, LoggerError> {
         let mut guards = Vec::with_capacity(2);
-        let file_writer = self.file.as_ref().map_or_else(
-            || Ok(tracing_appender::non_blocking(std::io::sink()).0),
-            |config| {
-                Ok(if config.enabled {
-                    let (writer, guard) = tracing_appender::non_blocking(self.init_file_rotate()?);
-                    guards.push(guard);
-                    writer
-                } else {
-                    tracing_appender::non_blocking(std::io::sink()).0
-                })
-            },
-        )?;
-        let std_out_writer = self.stdout.as_ref().map_or_else(
-            || tracing_appender::non_blocking(std::io::sink()).0,
-            |config| {
-                if config.enabled {
-                    let (writer, guard) = tracing_appender::non_blocking(std::io::stdout());
-                    guards.push(guard);
-                    writer
-                } else {
-                    tracing_appender::non_blocking(std::io::sink()).0
-                }
-            },
-        );
 
-        tracing_subscriber::registry()
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .with_writer(file_writer)
-                    .with_filter(LevelFilter::from_level(self.trace_level)),
-            )
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .with_writer(std_out_writer)
-                    .with_filter(LevelFilter::from_level(self.trace_level)),
-            )
-            .init();
+        let mut layers_iter = [
+            self.non_blocking_file_writer().ok(),
+            self.non_blocking_stdout_writer().ok(),
+        ]
+        .into_iter()
+        .flatten()
+        .map(|(writer, guard)| {
+            guards.push(guard);
+            tracing_subscriber::fmt::layer()
+                .with_writer(writer)
+                .with_filter(LevelFilter::from_level(self.trace_level))
+        });
+
+        if let Some(first_layer) = layers_iter.next() {
+            tracing_subscriber::registry()
+                .with(layers_iter.fold(first_layer.boxed(), |layer, next_layer| {
+                    layer.and_then(next_layer).boxed()
+                }))
+                .init();
+        };
 
         Ok(guards)
     }
@@ -96,6 +99,32 @@ impl LoggerExt for LoggerConfig {
             None,
         ))
     }
+
+    fn non_blocking_file_writer(&self) -> Result<(NonBlocking, WorkerGuard), LoggerError> {
+        self.file.as_ref().map_or_else(
+            || Err(LoggerError::EmptyConfig),
+            |config| {
+                if config.enabled {
+                    Ok(tracing_appender::non_blocking(self.init_file_rotate()?))
+                } else {
+                    Err(LoggerError::NotEnabled)
+                }
+            },
+        )
+    }
+
+    fn non_blocking_stdout_writer(&self) -> Result<(NonBlocking, WorkerGuard), LoggerError> {
+        self.stdout.as_ref().map_or_else(
+            || Err(LoggerError::EmptyConfig),
+            |config| {
+                if config.enabled {
+                    Ok(tracing_appender::non_blocking(std::io::stdout()))
+                } else {
+                    Err(LoggerError::NotEnabled)
+                }
+            },
+        )
+    }
 }
 
 #[derive(Debug, Error)]
@@ -104,4 +133,6 @@ pub enum LoggerError {
     EmptyConfig,
     #[error("No filename specified")]
     NoFileName,
+    #[error("This logger is not enabled")]
+    NotEnabled,
 }
