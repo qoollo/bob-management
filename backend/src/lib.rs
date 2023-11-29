@@ -45,6 +45,10 @@ impl Modify for SecurityAddon {
         services::api::raw_metrics_by_node,
         services::api::raw_configuration_by_node,
         services::api::get_vdisks,
+        services::api::get_node_info,
+        services::api::get_vdisk_info,
+        services::api::get_nodes_list,
+        services::api::get_vdisks_list,
     ),
     components(
         schemas(models::shared::Credentials, models::shared::Hostname, models::shared::BobConnectionData,
@@ -68,6 +72,9 @@ impl Modify for SecurityAddon {
             models::api::RPS,
             models::api::RawMetricEntry,
             models::api::TypedMetrics,
+            connector::dto::Node,
+            connector::dto::VDisk,
+            connector::dto::Replica,
             connector::dto::MetricsEntryModel,
             connector::dto::MetricsSnapshotModel,
             connector::dto::NodeConfiguration
