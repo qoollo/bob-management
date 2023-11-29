@@ -269,7 +269,7 @@ pub async fn get_vdisks_list(
 #[cfg_attr(feature = "swagger", utoipa::path(
         get,
         context_path = ApiV1::to_path(),
-        path = "/vdisk/{vdisk_id}",
+        path = "/vdisks/{vdisk_id}",
         responses(
             (
                 status = 200, body = VDisk,
@@ -499,263 +499,263 @@ pub async fn get_node_info(
     Ok(Json(node))
 }
 
-/// Returns list of all known nodes
-///
-/// # Errors
-///
-/// This function will return an error if one of the requests to get list of virtual disks or nodes fails
-#[cfg_attr(feature = "swagger", utoipa::path(
-        get,
-        context_path = ApiV1::to_path(),
-        path = "/nodes",
-        responses(
-            (
-            status = 200, body = PaginatedResponse<Node>,
-            content_type = "application/json",
-            description = "Node List"),
-            (status = 401, description = "Unauthorized")
-        ),
-        security(("api_key" = []))
-    ))]
-pub async fn get_nodes(
-    Extension(client): Extension<HttpBobClient>,
-    Query(params): Query<Option<Pagination>>,
-) -> AxumResult<Json<PaginatedResponse<Node>>> {
-    tracing::info!("get /nodes : {client:?}");
+// /// Returns list of all known nodes
+// ///
+// /// # Errors
+// ///
+// /// This function will return an error if one of the requests to get list of virtual disks or nodes fails
+// #[cfg_attr(feature = "swagger", utoipa::path(
+//         get,
+//         context_path = ApiV1::to_path(),
+//         path = "/nodes",
+//         responses(
+//             (
+//             status = 200, body = PaginatedResponse<Node>,
+//             content_type = "application/json",
+//             description = "Node List"),
+//             (status = 401, description = "Unauthorized")
+//         ),
+//         security(("api_key" = []))
+//     ))]
+// pub async fn get_nodes(
+//     Extension(client): Extension<HttpBobClient>,
+//     Query(params): Query<Option<Pagination>>,
+// ) -> AxumResult<Json<PaginatedResponse<Node>>> {
+//     tracing::info!("get /nodes : {client:?}");
+//
+//     let len = client.cluster_with_addr().len();
+//     Ok(if let Some(page_params) = params {
+//         Json(PaginatedResponse::new(
+//             batch_get_nodes(client, page_params.clone()).await?,
+//             len,
+//             page_params.page,
+//             page_params.per_page,
+//         ))
+//     } else {
+//         Json(PaginatedResponse::new(
+//             dump_get_nodes(client).await?,
+//             len,
+//             1,
+//             1,
+//         ))
+//     })
+// }
 
-    let len = client.cluster_with_addr().len();
-    Ok(if let Some(page_params) = params {
-        Json(PaginatedResponse::new(
-            batch_get_nodes(client, page_params.clone()).await?,
-            len,
-            page_params.page,
-            page_params.per_page,
-        ))
-    } else {
-        Json(PaginatedResponse::new(
-            dump_get_nodes(client).await?,
-            len,
-            1,
-            1,
-        ))
-    })
-}
+// pub async fn batch_get_nodes(
+//     client: HttpBobClient,
+//     Pagination { page, per_page }: Pagination,
+// ) -> AxumResult<Vec<Node>> {
+//     if page == 0 {
+//         return Err(StatusCode::BAD_REQUEST.into());
+//     }
+//     let len = client.cluster_with_addr().len();
+//     let first_node = (page - 1) * per_page;
+//     if first_node >= len {
+//         return Err(StatusCode::NOT_FOUND.into());
+//     }
+//     let iter = client
+//         .cluster()
+//         .skip(first_node)
+//         .take(len.min(page * per_page));
+//
+//     todo!()
+// }
+//
+// pub async fn dump_get_nodes(client: HttpBobClient) -> AxumResult<Vec<Node>> {
+//     let mut metrics: FuturesUnordered<_> = client
+//         .cluster()
+//         .map(move |node| {
+//             let handle = node.clone();
+//             tokio::spawn(async move {
+//                 (
+//                     handle.get_status().await,
+//                     handle.get_metrics().await,
+//                     handle.get_space_info().await,
+//                 )
+//             })
+//         })
+//         .collect();
+//
+//     let vdisks = get_vdisks(Extension(client.clone())).await.map_err(|err| {
+//         tracing::error!("{err:?}");
+//         APIError::RequestFailed
+//     })?;
+//
+//     let nodes = fetch_nodes(client.api_main()).await?;
+//     let vdisks: HashMap<u64, &VDisk> = vdisks.iter().map(|vdisk| (vdisk.id, vdisk)).collect();
+//
+//     let nodes: HashMap<&NodeName, &dto::Node> =
+//         nodes.iter().map(move |node| (&node.name, node)).collect();
+//
+//     let mut res = nodes
+//         .iter()
+//         .map(|(&name, node)| {
+//             let vdisks = node
+//                 .vdisks
+//                 .as_ref()
+//                 .map_or_else(std::vec::Vec::new, |node_vdisks| {
+//                     node_vdisks
+//                         .iter()
+//                         .filter_map(|vdisk| vdisks.get(&(vdisk.id as u64)))
+//                         .map(|vdisk| (*vdisk).clone())
+//                         .collect()
+//                 });
+//             (
+//                 name,
+//                 Node {
+//                     name: name.clone(),
+//                     hostname: node.address.clone(),
+//                     vdisks,
+//                     status: NodeStatus::Offline,
+//                     rps: None,
+//                     alien_count: None,
+//                     corrupted_count: None,
+//                     space: None,
+//                 },
+//             )
+//         })
+//         .collect::<HashMap<&NodeName, Node>>();
+//
+//     let mut counter = 0;
+//     while let Some(fut) = metrics.next().await {
+//         let Ok((
+//             Ok(GetStatusResponse::AJSONWithNodeInfo(status)),
+//             Ok(GetMetricsResponse::Metrics(metric)),
+//             Ok(GetSpaceInfoResponse::SpaceInfo(space)),
+//         )) = fut
+//         else {
+//             tracing::warn!("couldn't finish task: tokio task failed.");
+//             continue;
+//         };
+//         if let Some(node) = res.get_mut(&status.name.to_string()) {
+//             let metric = Into::<TypedMetrics>::into(metric);
+//             tracing::info!("#{counter}: received metrics successfully.");
+//             node.status = NodeStatus::from_problems(NodeProblem::default_from_metrics(&metric));
+//             node.rps = Some(
+//                 metric[RawMetricEntry::PearlGetCountRate].value
+//                     + metric[RawMetricEntry::PearlPutCountRate].value
+//                     + metric[RawMetricEntry::PearlExistCountRate].value
+//                     + metric[RawMetricEntry::PearlDeleteCountRate].value,
+//             );
+//             node.alien_count = Some(metric[RawMetricEntry::BackendAlienCount].value);
+//             node.corrupted_count = Some(metric[RawMetricEntry::BackendCorruptedBlobCount].value);
+//             node.space = Some(SpaceInfo {
+//                 total_disk: space.total_disk_space_bytes,
+//                 free_disk: space.total_disk_space_bytes - space.used_disk_space_bytes,
+//                 used_disk: space.used_disk_space_bytes,
+//                 occupied_disk: space.occupied_disk_space_bytes,
+//             });
+//         }
+//         counter += 1;
+//     }
+//     tracing::trace!("send response: {res:?}");
+//
+//     Ok(res.values().cloned().collect())
+// }
 
-pub async fn batch_get_nodes(
-    client: HttpBobClient,
-    Pagination { page, per_page }: Pagination,
-) -> AxumResult<Vec<Node>> {
-    if page == 0 {
-        return Err(StatusCode::BAD_REQUEST.into());
-    }
-    let len = client.cluster_with_addr().len();
-    let first_node = (page - 1) * per_page;
-    if first_node >= len {
-        return Err(StatusCode::NOT_FOUND.into());
-    }
-    let iter = client
-        .cluster()
-        .skip(first_node)
-        .take(len.min(page * per_page));
-
-    todo!()
-}
-
-pub async fn dump_get_nodes(client: HttpBobClient) -> AxumResult<Vec<Node>> {
-    let mut metrics: FuturesUnordered<_> = client
-        .cluster()
-        .map(move |node| {
-            let handle = node.clone();
-            tokio::spawn(async move {
-                (
-                    handle.get_status().await,
-                    handle.get_metrics().await,
-                    handle.get_space_info().await,
-                )
-            })
-        })
-        .collect();
-
-    let vdisks = get_vdisks(Extension(client.clone())).await.map_err(|err| {
-        tracing::error!("{err:?}");
-        APIError::RequestFailed
-    })?;
-
-    let nodes = fetch_nodes(client.api_main()).await?;
-    let vdisks: HashMap<u64, &VDisk> = vdisks.iter().map(|vdisk| (vdisk.id, vdisk)).collect();
-
-    let nodes: HashMap<&NodeName, &dto::Node> =
-        nodes.iter().map(move |node| (&node.name, node)).collect();
-
-    let mut res = nodes
-        .iter()
-        .map(|(&name, node)| {
-            let vdisks = node
-                .vdisks
-                .as_ref()
-                .map_or_else(std::vec::Vec::new, |node_vdisks| {
-                    node_vdisks
-                        .iter()
-                        .filter_map(|vdisk| vdisks.get(&(vdisk.id as u64)))
-                        .map(|vdisk| (*vdisk).clone())
-                        .collect()
-                });
-            (
-                name,
-                Node {
-                    name: name.clone(),
-                    hostname: node.address.clone(),
-                    vdisks,
-                    status: NodeStatus::Offline,
-                    rps: None,
-                    alien_count: None,
-                    corrupted_count: None,
-                    space: None,
-                },
-            )
-        })
-        .collect::<HashMap<&NodeName, Node>>();
-
-    let mut counter = 0;
-    while let Some(fut) = metrics.next().await {
-        let Ok((
-            Ok(GetStatusResponse::AJSONWithNodeInfo(status)),
-            Ok(GetMetricsResponse::Metrics(metric)),
-            Ok(GetSpaceInfoResponse::SpaceInfo(space)),
-        )) = fut
-        else {
-            tracing::warn!("couldn't finish task: tokio task failed.");
-            continue;
-        };
-        if let Some(node) = res.get_mut(&status.name.to_string()) {
-            let metric = Into::<TypedMetrics>::into(metric);
-            tracing::info!("#{counter}: received metrics successfully.");
-            node.status = NodeStatus::from_problems(NodeProblem::default_from_metrics(&metric));
-            node.rps = Some(
-                metric[RawMetricEntry::PearlGetCountRate].value
-                    + metric[RawMetricEntry::PearlPutCountRate].value
-                    + metric[RawMetricEntry::PearlExistCountRate].value
-                    + metric[RawMetricEntry::PearlDeleteCountRate].value,
-            );
-            node.alien_count = Some(metric[RawMetricEntry::BackendAlienCount].value);
-            node.corrupted_count = Some(metric[RawMetricEntry::BackendCorruptedBlobCount].value);
-            node.space = Some(SpaceInfo {
-                total_disk: space.total_disk_space_bytes,
-                free_disk: space.total_disk_space_bytes - space.used_disk_space_bytes,
-                used_disk: space.used_disk_space_bytes,
-                occupied_disk: space.occupied_disk_space_bytes,
-            });
-        }
-        counter += 1;
-    }
-    tracing::trace!("send response: {res:?}");
-
-    Ok(res.values().cloned().collect())
-}
-
-/// Get Virtual Disks
-///
-/// # Errors
-///
-/// This function will return an error if one of the requests to get list of vdisks or nodes fails
-#[cfg_attr(feature = "swagger", utoipa::path(
-        get,
-        context_path = ApiV1::to_path(),
-        path = "/vdisks",
-        responses(
-            (status = 200, body = Vec<VDisk>, content_type = "application/json", description = "Virtual disks list"),
-            (status = 401, description = "Unauthorized")
-        ),
-        security(("api_key" = []))
-    ))]
-pub async fn get_vdisks(
-    Extension(client): Extension<HttpBobClient>,
-) -> AxumResult<Json<Vec<VDisk>>> {
-    tracing::info!("get /vdisks : {client:?}");
-
-    let mut disks: FuturesUnordered<_> = client
-        .cluster()
-        .map(move |node| {
-            let handle = node.clone();
-            tokio::spawn(async move { (handle.get_status().await, handle.get_disks().await) })
-        })
-        .collect();
-
-    let api = client.api_main();
-    let nodes = fetch_nodes(api).await?;
-    let virt_disks = fetch_vdisks(api).await?;
-
-    let nodes: HashMap<&NodeName, &dto::Node> =
-        nodes.iter().map(|node| (&node.name, node)).collect();
-
-    let mut res_disks = HashMap::new();
-    while let Some(res) = disks.next().await {
-        if let Ok((
-            Ok(GetStatusResponse::AJSONWithNodeInfo(status)),
-            Ok(GetDisksResponse::AJSONArrayWithDisksAndTheirStates(disks)),
-        )) = res
-        {
-            let mut map = HashMap::new();
-            for disk in disks {
-                map.insert(disk.name, disk.is_active);
-            }
-            res_disks.insert(status.name, map);
-        } else {
-            tracing::warn!("couldn't receive node's space info");
-        }
-    }
-
-    let mut res = vec![];
-
-    for vdisk in virt_disks {
-        let replicas = if let Some(replicas) = vdisk.replicas {
-            let mut res = vec![];
-            for replica in replicas {
-                res.push(if let Some(disks) = res_disks.get(&replica.node) {
-                    process_replica(&client, replica, disks, &nodes).await
-                } else {
-                    Replica {
-                        node: replica.node,
-                        disk: replica.disk,
-                        path: replica.path,
-                        status: ReplicaStatus::Offline(vec![ReplicaProblem::NodeUnavailable]),
-                    }
-                });
-            }
-            res
-        } else {
-            vec![]
-        };
-        let count = replicas
-            .iter()
-            .filter(|replica| matches!(replica.status, ReplicaStatus::Offline(_)))
-            .count();
-        let status = if count == 0 {
-            VDiskStatus::Good
-        } else if count == replicas.len() {
-            VDiskStatus::Offline
-        } else {
-            VDiskStatus::Bad
-        };
-        let part = client.api_main().get_partitions(vdisk.id).await.ok();
-        let partition_count =
-            if let Some(GetPartitionsResponse::NodeInfoAndJSONArrayWithPartitionsInfo(part)) = part
-            {
-                part.partitions.unwrap_or_default().len()
-            } else {
-                0
-            } as u64;
-        res.push(VDisk {
-            id: vdisk.id as u64,
-            status,
-            partition_count,
-            replicas,
-        });
-    }
-    tracing::trace!("send response: {res:?}");
-
-    Ok(Json(res))
-}
+// /// Get Virtual Disks
+// ///
+// /// # Errors
+// ///
+// /// This function will return an error if one of the requests to get list of vdisks or nodes fails
+// #[cfg_attr(feature = "swagger", utoipa::path(
+//         get,
+//         context_path = ApiV1::to_path(),
+//         path = "/vdisks",
+//         responses(
+//             (status = 200, body = Vec<VDisk>, content_type = "application/json", description = "Virtual disks list"),
+//             (status = 401, description = "Unauthorized")
+//         ),
+//         security(("api_key" = []))
+//     ))]
+// pub async fn get_vdisks(
+//     Extension(client): Extension<HttpBobClient>,
+// ) -> AxumResult<Json<Vec<VDisk>>> {
+//     tracing::info!("get /vdisks : {client:?}");
+//
+//     let mut disks: FuturesUnordered<_> = client
+//         .cluster()
+//         .map(move |node| {
+//             let handle = node.clone();
+//             tokio::spawn(async move { (handle.get_status().await, handle.get_disks().await) })
+//         })
+//         .collect();
+//
+//     let api = client.api_main();
+//     let nodes = fetch_nodes(api).await?;
+//     let virt_disks = fetch_vdisks(api).await?;
+//
+//     let nodes: HashMap<&NodeName, &dto::Node> =
+//         nodes.iter().map(|node| (&node.name, node)).collect();
+//
+//     let mut res_disks = HashMap::new();
+//     while let Some(res) = disks.next().await {
+//         if let Ok((
+//             Ok(GetStatusResponse::AJSONWithNodeInfo(status)),
+//             Ok(GetDisksResponse::AJSONArrayWithDisksAndTheirStates(disks)),
+//         )) = res
+//         {
+//             let mut map = HashMap::new();
+//             for disk in disks {
+//                 map.insert(disk.name, disk.is_active);
+//             }
+//             res_disks.insert(status.name, map);
+//         } else {
+//             tracing::warn!("couldn't receive node's space info");
+//         }
+//     }
+//
+//     let mut res = vec![];
+//
+//     for vdisk in virt_disks {
+//         let replicas = if let Some(replicas) = vdisk.replicas {
+//             let mut res = vec![];
+//             for replica in replicas {
+//                 res.push(if let Some(disks) = res_disks.get(&replica.node) {
+//                     process_replica(&client, replica, disks, &nodes).await
+//                 } else {
+//                     Replica {
+//                         node: replica.node,
+//                         disk: replica.disk,
+//                         path: replica.path,
+//                         status: ReplicaStatus::Offline(vec![ReplicaProblem::NodeUnavailable]),
+//                     }
+//                 });
+//             }
+//             res
+//         } else {
+//             vec![]
+//         };
+//         let count = replicas
+//             .iter()
+//             .filter(|replica| matches!(replica.status, ReplicaStatus::Offline(_)))
+//             .count();
+//         let status = if count == 0 {
+//             VDiskStatus::Good
+//         } else if count == replicas.len() {
+//             VDiskStatus::Offline
+//         } else {
+//             VDiskStatus::Bad
+//         };
+//         let part = client.api_main().get_partitions(vdisk.id).await.ok();
+//         let partition_count =
+//             if let Some(GetPartitionsResponse::NodeInfoAndJSONArrayWithPartitionsInfo(part)) = part
+//             {
+//                 part.partitions.unwrap_or_default().len()
+//             } else {
+//                 0
+//             } as u64;
+//         res.push(VDisk {
+//             id: vdisk.id as u64,
+//             status,
+//             partition_count,
+//             replicas,
+//         });
+//     }
+//     tracing::trace!("send response: {res:?}");
+//
+//     Ok(Json(res))
+// }
 
 async fn process_replica(
     client: &HttpBobClient,

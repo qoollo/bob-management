@@ -26,7 +26,10 @@ use api::{get_disks_count, get_nodes_count, get_rps, get_space};
 use auth::{login, logout, require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore};
 use prelude::*;
 
-use self::api::{get_nodes, raw_configuration_by_node, raw_metrics_by_node};
+use self::api::{
+    get_node_info, get_nodes_list, get_vdisk_info, get_vdisks_list, raw_configuration_by_node,
+    raw_metrics_by_node,
+};
 
 type BobAuthState = AuthState<
     BobUser,
@@ -48,7 +51,10 @@ pub fn api_router_v1(auth_state: BobAuthState) -> Result<Router<BobAuthState>, R
         .api_route("/nodes/count", &Method::GET, get_nodes_count)
         .api_route("/nodes/rps", &Method::GET, get_rps)
         .api_route("/nodes/space", &Method::GET, get_space)
-        .api_route("/nodes", &Method::GET, get_nodes)
+        .api_route("/nodes/list", &Method::GET, get_nodes_list)
+        .api_route("/nodes/:node_name", &Method::GET, get_node_info)
+        .api_route("/vdisks/list", &Method::GET, get_vdisks_list)
+        .api_route("/vdisks/:vdisk_id", &Method::GET, get_vdisk_info)
         .api_route(
             "/nodes/:node_name/metrics",
             &Method::GET,
