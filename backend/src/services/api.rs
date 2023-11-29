@@ -585,13 +585,12 @@ pub async fn raw_configuration_by_node(
 #[cfg_attr(feature = "swagger", utoipa::path(
         get,
         context_path = ApiV1::to_path(),
-        path = "/nodes/{node_name}",
+        path = "/nodes/{node_name}/detailed",
         params (
             ("id", description = "Node's ID")
         ),
         responses(
             (status = 200, body = DetailedNode, content_type = "application/json", description = "Detailed Node information"),
-
             (status = 401, description = "Unauthorized"),
             (status = 404, description = "Node Not Found")
         ),
