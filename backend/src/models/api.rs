@@ -9,7 +9,7 @@ pub const DEFAULT_MIN_FREE_SPACE_PERCENTAGE: f64 = 0.1;
 pub use crate::models::shared::{BobConnectionData, Credentials};
 
 /// Physical disk definition
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct Disk {
     /// Disk name
@@ -32,7 +32,7 @@ pub struct Disk {
 }
 
 /// Defines kind of problem on disk
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Hash)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum DiskProblem {
     #[serde(rename = "freeSpaceRunningOut")]
@@ -43,7 +43,7 @@ pub enum DiskProblem {
 ///
 /// Variant - Disk Status
 /// Content - List of problems on disk. 'null' if status != 'bad'
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash)]
 #[serde(tag = "status", content = "problems")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum DiskStatus {
@@ -75,7 +75,7 @@ impl DiskStatus {
 }
 
 /// Defines disk status names
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash, EnumIter)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum DiskStatusName {
@@ -84,7 +84,7 @@ pub enum DiskStatusName {
     Offline,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct Node {
     pub name: String,
@@ -97,7 +97,7 @@ pub struct Node {
 
     #[serde(rename = "rps")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rps: Option<u64>,
+    pub rps: Option<RPS>,
 
     #[serde(rename = "alienCount")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -112,7 +112,7 @@ pub struct Node {
 }
 
 /// Defines kind of problem on Node
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Hash)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum NodeProblem {
     #[serde(rename = "aliensExists")]
@@ -177,7 +177,7 @@ impl NodeProblem {
 /// Variants - Node status
 ///
 /// Content - List of problems on node. 'null' if status != 'bad'
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash)]
 #[serde(tag = "status", content = "problems")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum NodeStatus {
@@ -217,7 +217,7 @@ impl TypedMetrics {
 }
 
 /// Defines node status names
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash, EnumIter)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum NodeStatusName {
@@ -227,7 +227,7 @@ pub enum NodeStatusName {
 }
 
 /// [`VDisk`]'s replicas
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct Replica {
     pub node: String,
@@ -241,7 +241,7 @@ pub struct Replica {
 }
 
 /// Reasons why Replica is offline
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum ReplicaProblem {
     #[serde(rename = "nodeUnavailable")]
@@ -255,7 +255,7 @@ pub enum ReplicaProblem {
 /// Variants - Replica status
 ///
 /// Content - List of problems on replica. 'null' if status != 'offline'
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 #[serde(tag = "status", content = "problems")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum ReplicaStatus {
@@ -266,7 +266,7 @@ pub enum ReplicaStatus {
 }
 
 /// Disk space information in bytes
-#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct SpaceInfo {
     /// Total disk space amount
@@ -282,8 +282,38 @@ pub struct SpaceInfo {
     pub occupied_disk: u64,
 }
 
+impl From<dto::SpaceInfo> for SpaceInfo {
+    fn from(space: dto::SpaceInfo) -> Self {
+        Self {
+            total_disk: space.total_disk_space_bytes,
+            free_disk: space.total_disk_space_bytes - space.used_disk_space_bytes,
+            used_disk: space.used_disk_space_bytes,
+            occupied_disk: space.occupied_disk_space_bytes,
+        }
+    }
+}
+
+impl AddAssign for SpaceInfo {
+    fn add_assign(&mut self, rhs: Self) {
+        self.total_disk = rhs.total_disk;
+        self.free_disk = rhs.free_disk;
+        self.used_disk = rhs.used_disk;
+        self.occupied_disk = rhs.occupied_disk;
+    }
+}
+
+impl Add for SpaceInfo {
+    type Output = Self;
+
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self += rhs;
+
+        self
+    }
+}
+
 /// Virtual disk Component
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub struct VDisk {
     pub id: u64,
@@ -301,11 +331,9 @@ pub struct VDisk {
 ///
 /// Variants - Virtual Disk status
 /// status == 'bad' when at least one of its replicas has problems
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 #[serde(tag = "status")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
-// #[cfg_attr(all(feature = "swagger", debug_assertions),
-//     schema(example = json!({"status": "good"})))]
 pub enum VDiskStatus {
     #[serde(rename = "good")]
     Good,
@@ -316,7 +344,7 @@ pub enum VDiskStatus {
 }
 
 /// Types of operations on BOB cluster
-#[derive(Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
+#[derive(Debug, Clone, Serialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[serde(rename_all = "camelCase")]
 pub enum Operation {
@@ -326,7 +354,7 @@ pub enum Operation {
     Delete,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
+#[derive(Clone, Debug, Serialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 pub enum RawMetricEntry {
     #[serde(rename = "cluster_grinder.get_count_rate")]
@@ -552,61 +580,6 @@ impl From<dto::MetricsSnapshotModel> for TypedMetrics {
         }
 
         Self { map }
-    }
-}
-
-#[derive(IntoParams, Deserialize, Clone)]
-#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
-pub struct Pagination {
-    #[serde(default)]
-    pub page: usize,
-    #[serde(default)]
-    pub per_page: usize,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
-pub struct PaginatedResponse<T> {
-    /// The page of data being returned
-    pub data: Vec<T>,
-    /// The number of rows returned in the current page
-    pub count: usize,
-    /// The total number of rows available
-    pub total: usize,
-    /// The current page being returned
-    pub page: usize,
-    /// The number of pages available
-    pub page_count: usize,
-}
-
-impl<T> PaginatedResponse<T> {
-    /// Create a new `PaginatedResponse`
-    #[must_use]
-    pub fn new(data: Vec<T>, total: usize, page: usize, page_size: usize) -> Self {
-        let count = data.len().try_into().unwrap_or(0);
-        let page_count = total / page_size + usize::from(total % page_size != 0);
-
-        Self {
-            data,
-            count,
-            total,
-            page,
-            page_count,
-        }
-    }
-
-    /// Transform the data contained in the `PaginatedResponse`
-    pub fn map<B, F>(self, func: F) -> PaginatedResponse<B>
-    where
-        F: Fn(T) -> B,
-    {
-        PaginatedResponse::<B> {
-            data: self.data.into_iter().map(func).collect(),
-            count: self.count,
-            total: self.total,
-            page: self.page,
-            page_count: self.page_count,
-        }
     }
 }
 

@@ -1,4 +1,7 @@
 mod prelude {
+    pub use super::methods::{
+        fetch_configuration, fetch_metrics, fetch_nodes, fetch_vdisks, get_vdisk_by_id,
+    };
     pub use crate::{
         connector::{
             api::{prelude::*, ApiNoContext},
@@ -8,7 +11,7 @@ mod prelude {
         prelude::*,
     };
     pub use axum::{
-        extract::{FromRef, FromRequestParts},
+        extract::{FromRef, FromRequestParts, Path},
         http::request::Parts,
         middleware::{from_fn_with_state, Next},
         Router,
@@ -22,14 +25,12 @@ pub mod api;
 pub mod auth;
 pub mod methods;
 
-use api::{get_disks_count, get_nodes_count, get_rps, get_space};
+use api::{
+    get_disks_count, get_node_info, get_nodes_count, get_nodes_list, get_rps, get_space,
+    get_vdisk_info, get_vdisks_list, raw_configuration_by_node, raw_metrics_by_node,
+};
 use auth::{login, logout, require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore};
 use prelude::*;
-
-use self::api::{
-    get_node_info, get_nodes_list, get_vdisk_info, get_vdisks_list, raw_configuration_by_node,
-    raw_metrics_by_node,
-};
 
 type BobAuthState = AuthState<
     BobUser,
