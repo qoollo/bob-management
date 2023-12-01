@@ -394,9 +394,7 @@ impl<Id: IntoEnumIterator + Eq + Hash, V> std::ops::Index<Id> for TypedMap<Id, V
 }
 
 #[allow(clippy::expect_used)]
-impl<Id: IntoEnumIterator + Eq + Hash, V> std::ops::IndexMut<Id>
-    for TypedMap<Id, V>
-{
+impl<Id: IntoEnumIterator + Eq + Hash, V> std::ops::IndexMut<Id> for TypedMap<Id, V> {
     fn index_mut(&mut self, index: Id) -> &mut Self::Output {
         self.map.get_mut(&index).expect("infallible")
     }
