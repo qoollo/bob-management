@@ -143,14 +143,6 @@ paths:
           description: Unauthorized
       security:
       - api_key: []
-  /api/v1/root:
-    get:
-      tags:
-      - crate
-      operationId: root
-      responses:
-        '200':
-          description: Hello Bob!
 components:
   schemas:
     BobConnectionData:
