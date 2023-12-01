@@ -364,7 +364,8 @@ pub type BobAuth<Client> = AuthStore<
     InMemorySessionStore<Uuid, BobUser>,
 >;
 
-#[cfg_attr(feature = "swagger", utoipa::path(
+#[cfg_attr(all(feature = "swagger", debug_assertions),
+    utoipa::path(
         post,
         context_path = ApiV1::to_path(),
         path = "/logout",
