@@ -13,8 +13,7 @@ paths:
       tags:
       - services::api
       summary: Returns count of Physical Disks per status
-      description: |
-        Returns count of Physical Disks per status
+      description: Returns count of Physical Disks per status
       operationId: get_disks_count
       responses:
         '200':
@@ -91,8 +90,7 @@ paths:
       tags:
       - services::api
       summary: Get Nodes count per Status
-      description: |
-        Get Nodes count per Status
+      description: Get Nodes count per Status
       operationId: get_nodes_count
       responses:
         '200':
@@ -110,8 +108,7 @@ paths:
       tags:
       - services::api
       summary: Returns Total RPS on cluster
-      description: |
-        Returns Total RPS on cluster
+      description: Returns Total RPS on cluster
       operationId: get_rps
       responses:
         '200':
@@ -129,8 +126,7 @@ paths:
       tags:
       - services::api
       summary: Return inforamtion about space on cluster
-      description: |
-        Return inforamtion about space on cluster
+      description: Return inforamtion about space on cluster
       operationId: get_space
       responses:
         '200':
