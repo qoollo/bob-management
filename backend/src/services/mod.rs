@@ -57,7 +57,7 @@ pub fn api_router_v1(auth_state: BobAuthState) -> Result<Router<BobAuthState>, R
         .api_route("/nodes/list", &Method::GET, get_nodes_list)
         .api_route("/nodes/:node_name", &Method::GET, get_node_info)
         .api_route("/vdisks/list", &Method::GET, get_vdisks_list)
-        .api_route("/vdisks/vdisk_id", &Method::GET, get_vdisk_info)
+        .api_route("/vdisks/:vdisk_id", &Method::GET, get_vdisk_info)
         .api_route(
             "/nodes/:node_name/metrics",
             &Method::GET,
