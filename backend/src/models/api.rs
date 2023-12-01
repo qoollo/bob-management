@@ -313,6 +313,38 @@ pub type NodeCount = TypedMap<NodeStatusName, u64>;
 // #[cfg(not(all(feature = "swagger", debug_assertions)))]
 pub type DiskCount = TypedMap<DiskStatusName, u64>;
 
+impl RPS {
+    #[must_use]
+    pub fn from_metrics(metrics: &TypedMetrics) -> Self {
+        let mut rps = Self::new();
+        rps[Operation::Get] += metrics[RawMetricEntry::ClusterGrinderGetCountRate].value;
+        rps[Operation::Delete] += metrics[RawMetricEntry::ClusterGrinderDeleteCountRate].value;
+        rps[Operation::Exist] += metrics[RawMetricEntry::ClusterGrinderExistCountRate].value;
+        rps[Operation::Put] += metrics[RawMetricEntry::ClusterGrinderPutCountRate].value;
+
+        rps
+    }
+}
+
+impl AddAssign for RPS {
+    fn add_assign(&mut self, rhs: Self) {
+        self[Operation::Get] += rhs[Operation::Get];
+        self[Operation::Delete] += rhs[Operation::Delete];
+        self[Operation::Exist] += rhs[Operation::Exist];
+        self[Operation::Put] += rhs[Operation::Put];
+    }
+}
+
+impl Add for RPS {
+    type Output = Self;
+
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self += rhs;
+
+        self
+    }
+}
+
 #[derive(Debug, Serialize, Clone)]
 // #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 // #[cfg_attr(all(feature = "swagger", debug_assertions),
