@@ -22,7 +22,6 @@ pub mod api;
 pub mod auth;
 pub mod methods;
 
-use crate::root;
 use api::{get_disks_count, get_nodes_count, get_rps, get_space};
 use auth::{login, logout, require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore};
 use prelude::*;
@@ -43,7 +42,6 @@ type BobAuthState = AuthState<
 pub fn api_router_v1(auth_state: BobAuthState) -> Result<Router<BobAuthState>, RouteError> {
     Router::new()
         .with_context::<ApiV1, ApiDoc>()
-        .api_route("/root", &Method::GET, root)
         .api_route("/disks/count", &Method::GET, get_disks_count)
         .api_route("/nodes/count", &Method::GET, get_nodes_count)
         .api_route("/nodes/rps", &Method::GET, get_rps)

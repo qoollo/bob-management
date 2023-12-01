@@ -87,7 +87,8 @@ pub struct BobConnectionData {
     all(feature = "swagger", debug_assertions),
     derive(IntoParams, ToSchema)
 )]
-#[cfg_attr(all(feature = "swagger", debug_assertions), schema(example = json!({"login": "archeoss", "password": "12345"})))]
+#[cfg_attr(all(feature = "swagger", debug_assertions),
+    schema(example = json!({"login": "archeoss", "password": "12345"})))]
 pub struct Credentials {
     /// Login used during auth
     pub login: String,

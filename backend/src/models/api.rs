@@ -325,7 +325,7 @@ pub type DiskCount = TypedMap<DiskStatusName, u64>;
 // )]
 // #[cfg_attr(all(feature = "swagger", debug_assertions),
 //     schema(example = json!({"put": 7, "get": 8, "delete": 2, "exist": 3})))]
-pub struct TypedMap<Id: IntoEnumIterator + Eq + Hash, Value: PartialSchema> {
+pub struct TypedMap<Id: IntoEnumIterator + Eq + Hash, Value> {
     // FIXME: Bugged; Remove manual impl's of `ToSchema` and uncomment when fixed
     // See -> https://github.com/juhaku/utoipa/issues/644
     // #[schema(schema_with = get_map_schema::<Id, Value>)]
@@ -385,7 +385,7 @@ impl<
     }
 }
 
-impl<Id: IntoEnumIterator + Eq + Hash, V: PartialSchema> std::ops::Index<Id> for TypedMap<Id, V> {
+impl<Id: IntoEnumIterator + Eq + Hash, V> std::ops::Index<Id> for TypedMap<Id, V> {
     type Output = V;
 
     fn index(&self, index: Id) -> &Self::Output {
@@ -394,7 +394,7 @@ impl<Id: IntoEnumIterator + Eq + Hash, V: PartialSchema> std::ops::Index<Id> for
 }
 
 #[allow(clippy::expect_used)]
-impl<Id: IntoEnumIterator + Eq + Hash, V: PartialSchema> std::ops::IndexMut<Id>
+impl<Id: IntoEnumIterator + Eq + Hash, V> std::ops::IndexMut<Id>
     for TypedMap<Id, V>
 {
     fn index_mut(&mut self, index: Id) -> &mut Self::Output {
@@ -402,7 +402,7 @@ impl<Id: IntoEnumIterator + Eq + Hash, V: PartialSchema> std::ops::IndexMut<Id>
     }
 }
 
-impl<Id: IntoEnumIterator + Hash + Eq, V: Default + PartialSchema> Default for TypedMap<Id, V> {
+impl<Id: IntoEnumIterator + Hash + Eq, V: Default> Default for TypedMap<Id, V> {
     fn default() -> Self {
         let mut map = HashMap::new();
         for key in Id::iter() {
@@ -413,7 +413,7 @@ impl<Id: IntoEnumIterator + Hash + Eq, V: Default + PartialSchema> Default for T
     }
 }
 
-impl<Id: IntoEnumIterator + Hash + Eq, V: Default + PartialSchema> TypedMap<Id, V> {
+impl<Id: IntoEnumIterator + Hash + Eq, V: Default> TypedMap<Id, V> {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -424,7 +424,7 @@ pub trait Util<Id: IntoEnumIterator> {
     fn key_iter() -> Id::Iterator;
 }
 
-impl<Id: IntoEnumIterator + Hash + Eq, V: Default + PartialSchema> Util<Id> for TypedMap<Id, V> {
+impl<Id: IntoEnumIterator + Hash + Eq, V: Default> Util<Id> for TypedMap<Id, V> {
     fn key_iter() -> Id::Iterator {
         Id::iter()
     }

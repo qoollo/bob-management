@@ -17,6 +17,7 @@ pub mod models;
 pub mod router;
 pub mod services;
 
+#[cfg(all(feature = "swagger", debug_assertions))]
 struct SecurityAddon;
 
 #[cfg(all(feature = "swagger", debug_assertions))]
@@ -34,7 +35,6 @@ impl Modify for SecurityAddon {
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(OpenApi))]
 #[cfg_attr(all(feature = "swagger", debug_assertions), openapi(
     paths(
-        root,
         services::auth::login,
         services::auth::logout,
         services::api::get_disks_count,
@@ -72,6 +72,7 @@ impl Modify for SecurityAddon {
 ))]
 pub struct ApiDoc;
 
+// <<<<<<< HEAD
 // [TEMP]
 // TODO: Remove when the actual API will be implemented
 #[allow(clippy::unused_async)]
@@ -86,6 +87,7 @@ pub struct ApiDoc;
 pub async fn root() -> &'static str {
     "Hello Bob!"
 }
+
 /// Generate openapi documentation for the project
 ///
 /// # Panics
@@ -121,6 +123,7 @@ pub fn openapi_doc() -> Router {
 }
 
 pub mod prelude {
+    pub use crate::ApiDoc;
     pub use crate::{
         connector::{
             client::Client,
@@ -134,7 +137,6 @@ pub mod prelude {
         },
         router::{ApiV1, ApiVersion, RouteError, RouterApiExt},
         services::auth::HttpBobClient,
-        ApiDoc,
     };
     pub use axum::{
         async_trait,
@@ -163,17 +165,16 @@ pub mod prelude {
 
 pub mod main {
     pub mod prelude {
+        pub use crate::ApiDoc;
         pub use crate::{
             config::{ConfigExt, LoggerExt},
             models::shared::RequestTimeout,
             prelude::*,
-            root,
             router::{ApiV1, ApiVersion, NoApi, RouterApiExt},
             services::{
                 api_router_v1,
                 auth::{require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore},
             },
-            ApiDoc,
         };
         pub use axum::{
             error_handling::HandleErrorLayer, middleware::from_fn_with_state, BoxError, Extension,
