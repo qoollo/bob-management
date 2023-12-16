@@ -1,3 +1,4 @@
+use crate::prelude::*;
 use cli::{Config, LoggerConfig};
 use file_rotate::{suffix::AppendTimestamp, ContentLimit, FileRotate};
 use thiserror::Error;
@@ -35,22 +36,27 @@ pub trait LoggerExt {
     /// Also returns [`WorkerGuard`] for off-thread writing.
     /// Should not be dropped.
     ///
+    /// Returns `None` if logger is not enabled
+    ///
     /// # Errors
     ///
     /// This function will return an error if the file logger configuration is empty, file logging
     /// is disabled or logs filename is not specified
-    fn non_blocking_file_writer(&self) -> Result<(NonBlocking, WorkerGuard), LoggerError>;
+    fn non_blocking_file_writer(&self) -> Result<Option<(NonBlocking, WorkerGuard)>, LoggerError>;
 
     /// Returns non-blocking stdout writer
     ///
     /// Also returns [`WorkerGuard`] for off-thread writing.
     /// Should not be dropped.
     ///
+    /// Returns `None` if logger is not enabled
+    ///
     /// # Errors
     ///
     /// This function will return an error if the stdout logger configuration is empty or stdout logging
     /// is disabled
-    fn non_blocking_stdout_writer(&self) -> Result<(NonBlocking, WorkerGuard), LoggerError>;
+    fn non_blocking_stdout_writer(&self)
+        -> Result<Option<(NonBlocking, WorkerGuard)>, LoggerError>;
 }
 
 impl ConfigExt for Config {
@@ -66,8 +72,8 @@ impl LoggerExt for LoggerConfig {
         let mut guards = Vec::with_capacity(2);
 
         let mut layers_iter = [
-            self.non_blocking_file_writer().ok(),
-            self.non_blocking_stdout_writer().ok(),
+            self.non_blocking_file_writer()?,
+            self.non_blocking_stdout_writer()?,
         ]
         .into_iter()
         .flatten()
@@ -91,37 +97,43 @@ impl LoggerExt for LoggerConfig {
 
     fn init_file_rotate(&self) -> Result<FileRotate<AppendTimestamp>, LoggerError> {
         let config = self.file.as_ref().ok_or(LoggerError::EmptyConfig)?;
-        Ok(FileRotate::new(
-            config.log_file.as_ref().ok_or(LoggerError::NoFileName)?,
-            AppendTimestamp::default(file_rotate::suffix::FileLimit::MaxFiles(config.log_amount)),
-            ContentLimit::BytesSurpassed(config.log_size),
-            file_rotate::compression::Compression::OnRotate(1),
-            None,
-        ))
+        let log_file = config.log_file.as_ref().ok_or(LoggerError::NoFileName)?;
+        log_file
+            .is_file()
+            .then(|| {
+                FileRotate::new(
+                    log_file,
+                    AppendTimestamp::default(file_rotate::suffix::FileLimit::MaxFiles(
+                        config.log_amount,
+                    )),
+                    ContentLimit::BytesSurpassed(config.log_size),
+                    file_rotate::compression::Compression::OnRotate(1),
+                    None,
+                )
+            })
+            .ok_or_else(|| LoggerError::IncorrectFileName.into())
     }
 
-    fn non_blocking_file_writer(&self) -> Result<(NonBlocking, WorkerGuard), LoggerError> {
+    fn non_blocking_file_writer(&self) -> Result<Option<(NonBlocking, WorkerGuard)>, LoggerError> {
         self.file.as_ref().map_or_else(
-            || Err(LoggerError::EmptyConfig),
+            || Err(LoggerError::EmptyConfig.into()),
             |config| {
-                if config.enabled {
-                    Ok(tracing_appender::non_blocking(self.init_file_rotate()?))
-                } else {
-                    Err(LoggerError::NotEnabled)
-                }
+                Ok(config
+                    .enabled
+                    .then_some(tracing_appender::non_blocking(self.init_file_rotate()?)))
             },
         )
     }
 
-    fn non_blocking_stdout_writer(&self) -> Result<(NonBlocking, WorkerGuard), LoggerError> {
+    fn non_blocking_stdout_writer(
+        &self,
+    ) -> Result<Option<(NonBlocking, WorkerGuard)>, LoggerError> {
         self.stdout.as_ref().map_or_else(
-            || Err(LoggerError::EmptyConfig),
+            || Err(LoggerError::EmptyConfig.into()),
             |config| {
-                if config.enabled {
-                    Ok(tracing_appender::non_blocking(std::io::stdout()))
-                } else {
-                    Err(LoggerError::NotEnabled)
-                }
+                Ok(config
+                    .enabled
+                    .then(|| tracing_appender::non_blocking(std::io::stdout())))
             },
         )
     }
@@ -133,6 +145,6 @@ pub enum LoggerError {
     EmptyConfig,
     #[error("No filename specified")]
     NoFileName,
-    #[error("This logger is not enabled")]
-    NotEnabled,
+    #[error("Incorrect filename specified")]
+    IncorrectFileName,
 }
