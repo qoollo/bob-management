@@ -1,4 +1,4 @@
-name: CI
+name: CI frontend
 
 on:
   pull_request:
@@ -36,7 +36,7 @@ jobs:
         with:
           cmd: install
           dir: frontend
-      - name: Build frontend
+      - name: Lint frontend
         uses: borales/actions-yarn@v4
         with:
           cmd: lint
