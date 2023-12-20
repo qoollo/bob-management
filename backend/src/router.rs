@@ -7,8 +7,10 @@ use std::convert::Infallible;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use thiserror::Error;
-use utoipa::openapi::PathItemType;
 use utoipa::OpenApi;
+
+#[cfg(all(feature = "swagger", debug_assertions))]
+use utoipa::openapi::PathItemType;
 
 #[derive(Clone, Debug, Error, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RouteError {
@@ -209,6 +211,7 @@ where
         .attach_printable_lazy(|| format!("route: {route}"))
 }
 
+#[cfg(all(feature = "swagger", debug_assertions))]
 fn try_convert_path_item_type_from_method(value: &Method) -> Result<PathItemType, RouteError> {
     Ok(match *value {
         Method::GET => PathItemType::Get,

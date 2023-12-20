@@ -1,0 +1,27 @@
+[package]
+name = "utils"
+description = "Bob Management GUI: Utility tools"
+publish = false
+keywords = [ "BOB", "Management", "GUI" ]
+version.workspace = true
+authors.workspace = true
+license-file.workspace = true
+edition.workspace = true
+readme.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "gen-openapi"
+path = "gen_openapi.rs"
+required-features = [ "gen_api" ]
+
+[dependencies]
+bob-management = { path = "../backend/", optional = true }
+clap = { version = "4.4.8", features = ["derive"] }
+
+## OpenAPI + Swagger
+utoipa = { version = "4.0", features = ["yaml"], optional = true }
+
+[features]
+default = [ "gen_api" ]
+gen_api = [ "dep:utoipa", "bob-management/swagger"]
