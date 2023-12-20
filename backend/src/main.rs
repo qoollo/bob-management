@@ -52,6 +52,7 @@ async fn main() -> Result<(), AppError> {
     Ok(())
 }
 
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 fn router(cors: CorsLayer) -> Router {
     let mut frontend = env::current_exe().expect("Couldn't get current executable path.");
     frontend.pop();

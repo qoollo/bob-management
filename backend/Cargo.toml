@@ -47,4 +47,4 @@ cli = { path = "../cli" }
 [features]
 default = [ "swagger" ]
 swagger = [ "dep:utoipa", "dep:utoipa-swagger-ui" , "dep:utoipa-redoc", "dep:utoipa-rapidoc" ]
-
+gen_api = [ "dep:utoipa" ]

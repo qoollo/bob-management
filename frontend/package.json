@@ -14,7 +14,7 @@
     "@astrojs/check": "^0.2.0",
     "@astrojs/react": "^3.0.0",
     "@astrojs/tailwind": "^5.0.0",
-    "@playwright/test": "^1.30.0",
+    "@playwright/test": "^1.40.0",
     "@types/react": "^18.0.21",
     "@types/react-dom": "^18.0.6",
     "astro": "^3.0.2",
@@ -25,9 +25,13 @@
     "vite": "^4.4.9"
   },
   "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
     "eslint": "^8.48.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
     "prettier": "^3.0.2"

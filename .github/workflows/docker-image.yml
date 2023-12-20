@@ -1,0 +1,25 @@
+name: build-docker
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Set Bob GUI version
+        run: echo "VERSION=$(cargo metadata --format-version=1 --no-deps | jq '.packages[0].version' --raw-output)" >> "$GITHUB_ENV"
+      - name: Build alpine image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: dockerfiles/alpine/Dockerfile
+          tags: bob-management-gui:${{ env.VERSION }}
+          build-args: |
+            GIT_HASH_VAR=${{ github.sha }}
+            BRANCH_TAG_VAR=${{ github.ref }}

@@ -1,0 +1,71 @@
+name: CI frontend
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  push:
+    branches: [main]
+
+jobs:
+  build-frontend-with-yarn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install
+          dir: frontend
+      - name: Build frontend
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: build
+          dir: frontend
+  lint-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install
+          dir: frontend
+      - name: Lint frontend
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: lint
+          dir: frontend
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install
+          dir: frontend
+      - name: Install Playwright Browsers
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: playwright install --with-deps
+          dir: frontend
+      - name: Run Playwright tests
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: playwright test
+          dir: frontend
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 30

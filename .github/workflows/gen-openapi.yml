@@ -1,0 +1,29 @@
+name: update-api-schema
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+jobs:
+  gen-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.QOOLLO_BOT_APP_ID }}
+          private-key: ${{ secrets.QOOLLO_BOT_PRIVATE_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.app-token.outputs.token }}
+      - uses: actions-rs/cargo@v1
+        with:
+          command: run
+          args: -p utils --bin gen-openapi -- -f api/openapi.yaml
+      - name: "Update API schema"
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_user_name: "qoollo-bot[bot]"
+          commit_user_email: "151071968+qoollo-bot[bot]@users.noreply.github.com"
+          commit_message: "Autogenerate API"
