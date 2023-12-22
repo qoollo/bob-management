@@ -26,26 +26,51 @@ pub struct Config {
 }
 
 /// Logger Configuration passed on initialization
-#[allow(clippy::module_name_repetitions)]
 #[serde_as]
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct LoggerConfig {
-    /// [Stub] File to save logs
-    pub log_file: Option<PathBuf>,
+    /// Rolling file logger config
+    #[serde(default)]
+    pub file: Option<FileLogger>,
 
-    /// [Stub] Number of log files
-    #[serde(default = "LoggerConfig::default_log_amount")]
-    pub log_amount: usize,
-
-    /// [Stub] Max size of a single log file, in bytes
-    #[serde(default = "LoggerConfig::default_log_size")]
-    pub log_size: u64,
+    /// Stdout logger config
+    #[serde(default)]
+    pub stdout: Option<StdoutLogger>,
 
     /// Tracing Level
-    #[serde(default = "LoggerConfig::tracing_default")]
+    #[serde(default = "LoggerConfig::level_default")]
     #[serde_as(as = "DisplayFromStr")]
     pub trace_level: tracing::Level,
+}
+
+/// File Logger Configuration for writing logs to files
+#[serde_as]
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct FileLogger {
+    /// Enable log output to file
+    pub enabled: bool,
+
+    /// File to save logs
+    pub log_file: Option<PathBuf>,
+
+    /// Number of log files
+    #[serde(default = "FileLogger::default_log_amount")]
+    pub log_amount: usize,
+
+    /// Max size of a single log file, in bytes
+    #[serde(default = "FileLogger::default_log_size")]
+    pub log_size: usize,
+}
+
+/// Stdout Logger Configuration for printing logs into stdout
+#[serde_as]
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct StdoutLogger {
+    /// Enable log output to stdout
+    pub enabled: bool,
 }
 
 impl Default for Config {
@@ -59,41 +84,77 @@ impl Default for Config {
     }
 }
 
+impl Default for LoggerConfig {
+    fn default() -> Self {
+        Self {
+            file: None,
+            stdout: None,
+            trace_level: Self::level_default(),
+        }
+    }
+}
+
 impl Config {
+    #[must_use]
     pub const fn default_cors() -> bool {
         false
     }
 
+    #[must_use]
     pub const fn default_timeout() -> Duration {
         Duration::from_millis(5000)
     }
 }
 
 impl LoggerConfig {
-    pub const fn tracing_default() -> tracing::Level {
-        tracing::Level::INFO
+    #[must_use]
+    pub const fn level_default() -> tracing::Level {
+        tracing::Level::TRACE
+    }
+}
+
+impl FileLogger {
+    #[must_use]
+    pub const fn default_enabled() -> bool {
+        false
     }
 
+    #[must_use]
     pub const fn default_log_amount() -> usize {
         5
     }
 
-    pub const fn default_log_size() -> u64 {
-        10u64.pow(6)
+    #[must_use]
+    pub const fn default_log_size() -> usize {
+        10usize.pow(6)
     }
 }
 
-impl Default for LoggerConfig {
+impl StdoutLogger {
+    #[must_use]
+    pub const fn default_enabled() -> bool {
+        false
+    }
+}
+
+impl Default for FileLogger {
     fn default() -> Self {
         Self {
             log_file: None,
             log_amount: Self::default_log_amount(),
             log_size: Self::default_log_size(),
-            trace_level: Self::tracing_default(),
+            enabled: Self::default_enabled(),
         }
     }
 }
 
+impl Default for StdoutLogger {
+    fn default() -> Self {
+        Self {
+            enabled: Self::default_enabled(),
+        }
+    }
+}
 pub trait FromFile {
     /// Parses the file spcified in `path`
     ///
