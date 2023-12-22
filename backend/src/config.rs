@@ -94,11 +94,11 @@ impl LoggerExt for LoggerConfig {
     fn init_file_rotate(&self) -> Result<FileRotate<AppendTimestamp>, LoggerError> {
         let config = self.file.as_ref().ok_or(LoggerError::EmptyConfig)?;
         let log_file = config.log_file.as_ref().ok_or(LoggerError::NoFileName)?;
-        std::fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .open(log_file)
-            .change_context(LoggerError::CantWrite)?;
+        log_file
+            .as_os_str()
+            .is_empty()
+            .then(|| LoggerError::NoFileName)
+            .map_or(Ok(()), Err)?;
 
         Ok(FileRotate::new(
             log_file,
@@ -142,8 +142,6 @@ pub enum LoggerError {
     EmptyConfig,
     #[error("No filename specified")]
     NoFileName,
-    #[error("Can't write logs in file")]
-    CantWrite,
     #[error("This logger is not enabled")]
     NotEnabled,
 }
