@@ -94,11 +94,9 @@ impl LoggerExt for LoggerConfig {
     fn init_file_rotate(&self) -> Result<FileRotate<AppendTimestamp>, LoggerError> {
         let config = self.file.as_ref().ok_or(LoggerError::EmptyConfig)?;
         let log_file = config.log_file.as_ref().ok_or(LoggerError::NoFileName)?;
-        log_file
-            .as_os_str()
-            .is_empty()
-            .then(|| LoggerError::NoFileName)
-            .map_or(Ok(()), Err)?;
+        if log_file.as_os_str().is_empty() {
+            return Err(LoggerError::NoFileName);
+        }
 
         Ok(FileRotate::new(
             log_file,
