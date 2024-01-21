@@ -441,3 +441,101 @@ pub async fn raw_configuration_by_node(
         .await?,
     ))
 }
+
+/// Get Detailed Information on Node
+///
+/// # Errors
+///
+/// This function will return an error if the server was unable to get node'a client
+/// or one of the requests to get information from the node fails
+#[cfg_attr(feature = "swagger", utoipa::path(
+        get,
+        context_path = ApiV1::to_path(),
+        path = "/nodes/{node_name}/detailed",
+        params (
+            ("id", description = "Node's ID")
+        ),
+        responses(
+            (status = 200, body = DetailedNode, content_type = "application/json", description = "Detailed Node information"),
+            (status = 401, description = "Unauthorized"),
+            (status = 404, description = "Node Not Found")
+        ),
+        security(("api_key" = []))
+    ))]
+pub async fn get_detailed_node_info(
+    Extension(client): Extension<HttpBobClient>,
+    Path(node_name): Path<NodeName>,
+) -> AxumResult<Json<DetailedNode>> {
+    tracing::info!("get /nodes/{node_name}/detailed : {client:?}");
+    let handle = Arc::new(
+        client
+            .api_secondary(&node_name)
+            .cloned()
+            .ok_or(StatusCode::NOT_FOUND)?,
+    );
+
+    let status = {
+        let handle = handle.clone();
+        tokio::spawn(async move { handle.get_status().await })
+    };
+    let metrics = {
+        let handle = handle.clone();
+        tokio::spawn(async move { handle.clone().get_metrics().await })
+    };
+    let space_info = {
+        let handle = handle.clone();
+        tokio::spawn(async move { handle.clone().get_space_info().await })
+    };
+    let disks = {
+        let handle = handle.clone();
+        tokio::spawn(async move { handle.clone().get_disks().await })
+    };
+
+    let Ok(Ok(GetStatusResponse::AJSONWithNodeInfo(status))) = status.await else {
+        return Err(StatusCode::NOT_FOUND.into());
+    };
+
+    let mut node = DetailedNode {
+        name: status.name,
+        hostname: status.address,
+        ..Default::default()
+    };
+    let mut virt_disks: FuturesUnordered<_> = status
+        .vdisks
+        .iter()
+        .flatten()
+        .map(|vdisk| {
+            let handle = client.clone();
+            let id = vdisk.id as u64;
+            tokio::spawn(async move { get_vdisk_by_id(&handle, id).await })
+        })
+        .collect();
+
+    if let (
+        Ok(Ok(GetMetricsResponse::Metrics(raw_metrics))),
+        Ok(Ok(GetSpaceInfoResponse::SpaceInfo(raw_space))),
+    ) = (metrics.await, space_info.await)
+    {
+        if let Ok(Ok(GetDisksResponse::AJSONArrayWithDisksAndTheirStates(disks))) = disks.await {
+            node.disks = disks
+                .into_iter()
+                .map(|disk| Disk::from_metrics(disk.name, disk.path, &raw_metrics, &raw_space))
+                .collect();
+        }
+        let metrics = Into::<TypedMetrics>::into(raw_metrics);
+        node.status = NodeStatus::from_problems(NodeProblem::default_from_metrics(&metrics));
+        node.metrics = DetailedNodeMetrics::from_metrics(&metrics, raw_space.into());
+    }
+
+    while let Some(vdisk) = virt_disks.next().await {
+        if let Ok(Ok(vdisk)) = vdisk {
+            node.vdisks.push(vdisk);
+        } else {
+            tracing::warn!("some warning"); //TODO
+        }
+    }
+
+    tracing::trace!("send response: {node:?}");
+
+    Ok(Json(node))
+}

@@ -15,3 +15,4 @@ Bob Management GUI changelog
 - Home page, backend (#18)
 - Node list page, backend (#19)
 - VDisk list page, backend (#20)
+- Detailed node information page, backend (#21)
