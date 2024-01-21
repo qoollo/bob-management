@@ -82,7 +82,7 @@ pub struct BobConnectionData {
 }
 
 /// Optional auth credentials for a BOB cluster
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize)]
 #[cfg_attr(
     all(feature = "swagger", debug_assertions),
     derive(IntoParams, ToSchema)
