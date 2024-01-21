@@ -1,4 +1,7 @@
 mod prelude {
+    pub use super::methods::{
+        fetch_configuration, fetch_metrics, fetch_nodes, fetch_vdisks, get_vdisk_by_id,
+    };
     pub use crate::{
         connector::{
             api::{prelude::*, ApiNoContext},
@@ -8,7 +11,7 @@ mod prelude {
         prelude::*,
     };
     pub use axum::{
-        extract::{FromRef, FromRequestParts},
+        extract::{FromRef, FromRequestParts, Path},
         http::request::Parts,
         middleware::{from_fn_with_state, Next},
         Router,
@@ -22,7 +25,10 @@ pub mod api;
 pub mod auth;
 pub mod methods;
 
-use api::{get_disks_count, get_nodes_count, get_rps, get_space};
+use api::{
+    get_disks_count, get_node_info, get_nodes_count, get_nodes_list, get_rps, get_space,
+    raw_configuration_by_node, raw_metrics_by_node,
+};
 use auth::{login, logout, require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore};
 use prelude::*;
 
@@ -46,6 +52,18 @@ pub fn api_router_v1(auth_state: BobAuthState) -> Result<Router<BobAuthState>, R
         .api_route("/nodes/count", &Method::GET, get_nodes_count)
         .api_route("/nodes/rps", &Method::GET, get_rps)
         .api_route("/nodes/space", &Method::GET, get_space)
+        .api_route("/nodes/list", &Method::GET, get_nodes_list)
+        .api_route("/nodes/:node_name", &Method::GET, get_node_info)
+        .api_route(
+            "/nodes/:node_name/metrics",
+            &Method::GET,
+            raw_metrics_by_node,
+        )
+        .api_route(
+            "/nodes/:node_name/configuration",
+            &Method::GET,
+            raw_configuration_by_node,
+        )
         .unwrap()?
         .route_layer(from_fn_with_state(auth_state, require_auth))
         .with_context::<ApiV1, ApiDoc>()
