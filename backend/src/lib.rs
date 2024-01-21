@@ -17,18 +17,62 @@ pub mod models;
 pub mod router;
 pub mod services;
 
+#[cfg(all(feature = "swagger", debug_assertions))]
+struct SecurityAddon;
+
+#[cfg(all(feature = "swagger", debug_assertions))]
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "api_key",
+                SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("bob_apikey"))),
+            );
+        }
+    }
+}
+
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(OpenApi))]
 #[cfg_attr(all(feature = "swagger", debug_assertions), openapi(
-    paths(root, services::auth::login, services::auth::logout),
+    paths(
+        services::auth::login,
+        services::auth::logout,
+        services::api::get_disks_count,
+        services::api::get_nodes_count,
+        services::api::get_rps,
+        services::api::get_space,
+    ),
     components(
-        schemas(models::shared::Credentials, models::shared::Hostname, models::shared::BobConnectionData)
+        schemas(models::shared::Credentials, models::shared::Hostname, models::shared::BobConnectionData,
+            models::api::DiskProblem,
+            models::api::DiskStatus,
+            models::api::DiskStatusName,
+            models::api::DiskCount,
+            models::api::NodeProblem,
+            models::api::NodeStatus,
+            models::api::NodeStatusName,
+            models::api::NodeCount,
+            models::api::ReplicaProblem,
+            models::api::ReplicaStatus,
+            models::api::SpaceInfo,
+            models::api::VDiskStatus,
+            models::api::Operation,
+            models::api::RPS,
+            models::api::RawMetricEntry,
+            models::api::TypedMetrics,
+            connector::dto::MetricsEntryModel,
+            connector::dto::MetricsSnapshotModel,
+            connector::dto::NodeConfiguration
+        )
     ),
     tags(
         (name = "bob", description = "BOB management API")
-    )
+    ),
+    modifiers(&SecurityAddon)
 ))]
 pub struct ApiDoc;
 
+// <<<<<<< HEAD
 // [TEMP]
 // TODO: Remove when the actual API will be implemented
 #[allow(clippy::unused_async)]
@@ -43,6 +87,7 @@ pub struct ApiDoc;
 pub async fn root() -> &'static str {
     "Hello Bob!"
 }
+
 /// Generate openapi documentation for the project
 ///
 /// # Panics
@@ -78,11 +123,12 @@ pub fn openapi_doc() -> Router {
 }
 
 pub mod prelude {
+    pub use crate::ApiDoc;
     pub use crate::{
         connector::{
             client::Client,
             context::{ClientContext, ContextWrapper, DropContextService},
-            BobClient,
+            dto, BobClient,
         },
         error::AppError,
         models::{
@@ -91,7 +137,6 @@ pub mod prelude {
         },
         router::{ApiV1, ApiVersion, RouteError, RouterApiExt},
         services::auth::HttpBobClient,
-        ApiDoc,
     };
     pub use axum::{
         async_trait,
@@ -102,26 +147,34 @@ pub mod prelude {
     pub use error_stack::{Context, Report, Result, ResultExt};
     pub use hyper::{client::HttpConnector, Body, Method, Request, StatusCode};
     pub use serde::{Deserialize, Serialize};
-    pub use std::{collections::HashMap, hash::Hash, marker::PhantomData, str::FromStr};
+    pub use std::{
+        collections::{HashMap, HashSet},
+        hash::Hash,
+        marker::PhantomData,
+        str::FromStr,
+        sync::Arc,
+    };
     pub use thiserror::Error;
     #[cfg(all(feature = "swagger", debug_assertions))]
-    pub use utoipa::{IntoParams, OpenApi, ToSchema};
+    pub use utoipa::{
+        openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
+        IntoParams, Modify, OpenApi, PartialSchema, ToSchema,
+    };
     pub use uuid::Uuid;
 }
 
 pub mod main {
     pub mod prelude {
+        pub use crate::ApiDoc;
         pub use crate::{
             config::{ConfigExt, LoggerExt},
             models::shared::RequestTimeout,
             prelude::*,
-            root,
             router::{ApiV1, ApiVersion, NoApi, RouterApiExt},
             services::{
                 api_router_v1,
                 auth::{require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore},
             },
-            ApiDoc,
         };
         pub use axum::{
             error_handling::HandleErrorLayer, middleware::from_fn_with_state, BoxError, Extension,

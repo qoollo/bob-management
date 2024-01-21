@@ -32,12 +32,14 @@ thiserror = "1.0"
 
 ## General
 tokio = { version = "1.32", features = ["rt", "macros", "rt-multi-thread" ] }
-hyper = { version = "0.14", features = ["http2", "client"] }
+# TODO: Move to hyper 1.0
+hyper = { version = "0.14", features = ["http2", "client"] } 
 hyper_serde = "0.13"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.4", features = ["v4", "serde", "fast-rng"] }
 futures = "0.3"
+strum = { version = "0.25", features = ["derive"] }
 
 ## OpenAPI + Swagger
 utoipa = { version = "4.0", features = ["yaml", "axum_extras",  "chrono", "openapi_extensions"], optional = true }
@@ -57,5 +59,4 @@ utoipa = { version = "4.0", features = ["yaml", "axum_extras",  "chrono", "opena
 [features]
 default = [ "swagger" ]
 swagger = [ "dep:utoipa", "dep:utoipa-swagger-ui" , "dep:utoipa-redoc", "dep:utoipa-rapidoc" ]
-gen_api = [ "dep:utoipa" ]
 

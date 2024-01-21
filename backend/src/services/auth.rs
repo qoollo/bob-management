@@ -8,7 +8,7 @@ pub type HttpClient = ContextWrapper<
     >,
     ClientContext,
 >;
-pub type HttpBobClient = BobClient<HttpClient>;
+pub type HttpBobClient = BobClient<ClientContext, HttpClient>;
 
 #[derive(Debug, Error)]
 pub enum AuthError {
@@ -68,7 +68,7 @@ pub async fn login(
     Extension(request_timeout): Extension<RequestTimeout>,
     Json(bob): Json<BobConnectionData>,
 ) -> AxumResult<StatusCode> {
-    let bob_client = BobClient::<HttpClient>::try_new(bob.clone(), request_timeout)
+    let bob_client = BobClient::<_, HttpClient>::try_new(bob.clone(), request_timeout)
         .await
         .map_err(|err| {
             tracing::error!("{err:?}");
@@ -109,7 +109,13 @@ pub async fn login(
             tracing::error!("{err:?}");
             StatusCode::UNAUTHORIZED
         })?;
-        auth.client_store.insert(*bob_client.id(), bob_client);
+        auth.client_store
+            .save(*bob_client.id(), bob_client)
+            .await
+            .map_err(|err| {
+                tracing::error!("{err:?}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
     }
 
     Ok(res)
@@ -147,38 +153,43 @@ pub struct BobUser {
 }
 
 #[derive(Debug, Clone)]
-pub struct AuthState<User, Id, UserStore, Client> {
+pub struct AuthState<User, Id, UserStore, ClientStore> {
     user_store: UserStore,
-    client_store: HashMap<Id, Client>,
+    client_store: ClientStore,
     _user: PhantomData<User>,
+    _id: PhantomData<Id>,
 }
 
-impl<User, UserId, UserStore, Client> AuthState<User, UserId, UserStore, Client> {
-    pub fn new(user_store: UserStore) -> Self {
+impl<User, Id, UserStore, ClientStore> AuthState<User, Id, UserStore, ClientStore> {
+    pub const fn new(user_store: UserStore, client_store: ClientStore) -> Self {
         Self {
             user_store,
             _user: PhantomData,
-            client_store: HashMap::new(),
+            client_store,
+            _id: PhantomData,
         }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct AuthStore<User, Id, Client, SessionStore>
+pub struct AuthStore<User, Id, Client, ClientStore, SessionStore>
 where
     SessionStore: Store<Id, User>,
 {
     session: Session,
     auth_data: AuthData<User, Id>,
     user_store: SessionStore,
-    client_store: HashMap<Id, Client>,
+    client_store: ClientStore,
+    _client: PhantomData<Client>,
 }
 
-impl<User, Id, Client, SessionStore> AuthStore<User, Id, Client, SessionStore>
+impl<User, Id, Client, ClientStore, SessionStore>
+    AuthStore<User, Id, Client, ClientStore, SessionStore>
 where
     User: Clone + Serialize + for<'a> Deserialize<'a> + Sync + Send,
     Id: Clone + Serialize + for<'a> Deserialize<'a> + Sync + Send,
     SessionStore: Store<Id, User> + Sync + Send,
+    ClientStore: Store<Id, Client> + Sync + Send,
     Client: Send,
 {
     async fn login(&mut self, user_id: &Id) -> Result<(), AuthError> {
@@ -209,11 +220,13 @@ where
     }
 }
 
-impl<User, Id, Client, SessionStore> AuthStore<User, Id, Client, SessionStore>
+impl<User, Id, Client, ClientStore, SessionStore>
+    AuthStore<User, Id, Client, ClientStore, SessionStore>
 where
     User: Clone + Serialize + for<'a> Deserialize<'a>,
     Id: Clone + Serialize + for<'a> Deserialize<'a>,
     SessionStore: Store<Id, User>,
+    ClientStore: Store<Id, Client>,
 {
     const AUTH_DATA_KEY: &'static str = "_auth_data";
     /// Update session of this [`AuthStore<User, Id, Client, SessionStore>`].
@@ -230,13 +243,15 @@ where
 
 // NOTE: async_trait is used in `FromRequestParts` declaration, so we still need to use it here
 #[async_trait]
-impl<S, User, Id, Client, UserStore> FromRequestParts<S> for AuthStore<User, Id, Client, UserStore>
+impl<S, User, Id, Client, ClientStore, UserStore> FromRequestParts<S>
+    for AuthStore<User, Id, Client, ClientStore, UserStore>
 where
     S: Send + Sync,
     User: Serialize + for<'a> Deserialize<'a> + Clone + Send,
     Id: Serialize + for<'a> Deserialize<'a> + Clone + Send + Sync,
     UserStore: Store<Id, User> + Send + Sync,
-    AuthState<User, Id, UserStore, Client>: FromRef<S>,
+    ClientStore: Store<Id, Client> + Send + Sync,
+    AuthState<User, Id, UserStore, ClientStore>: FromRef<S>,
     Client: Send,
 {
     type Rejection = (StatusCode, &'static str);
@@ -280,6 +295,7 @@ where
             auth_data,
             user_store,
             client_store,
+            _client: PhantomData,
         })
     }
 }
@@ -289,19 +305,30 @@ where
 /// # Errors
 ///
 /// This function will return an error if a protected route was called from unauthorized context
-pub async fn require_auth<User, Id, Client, UserStore, Body>(
-    auth: AuthStore<User, Id, Client, UserStore>,
-    request: Request<Body>,
+pub async fn require_auth<User, Id, Client, ClientStore, UserStore, Body>(
+    auth: AuthStore<User, Id, Client, ClientStore, UserStore>,
+    mut request: Request<Body>,
     next: Next<Body>,
 ) -> std::result::Result<Response, StatusCode>
 where
     User: Serialize + for<'a> Deserialize<'a> + Clone + Send + Sync,
-    Id: Serialize + for<'a> Deserialize<'a> + Clone + Send + Sync,
+    Id: Serialize + for<'a> Deserialize<'a> + Clone + Send + Sync + Hash + Eq,
     UserStore: Store<Id, User> + Send + Sync,
-    Client: Send,
+    ClientStore: Store<Id, Client> + Send + Sync,
+    Client: Send + Sync + Clone + 'static,
     Body: Send + Sync,
 {
-    if auth.user().is_some() {
+    if let Some(id) = &auth.auth_data.user_id {
+        request.extensions_mut().insert(
+            auth.client_store
+                .load(id)
+                .await
+                .map_err(|err| {
+                    tracing::error!("{err:?}");
+                    StatusCode::UNAUTHORIZED
+                })?
+                .ok_or(StatusCode::UNAUTHORIZED)?,
+        );
         let response = next.run(request).await;
         Ok(response)
     } else {
@@ -335,9 +362,16 @@ where
     }
 }
 
-pub type BobAuth<Client> = AuthStore<BobUser, Uuid, Client, InMemorySessionStore<Uuid, BobUser>>;
+pub type BobAuth<Client> = AuthStore<
+    BobUser,
+    Uuid,
+    Client,
+    InMemorySessionStore<Uuid, Client>,
+    InMemorySessionStore<Uuid, BobUser>,
+>;
 
-#[cfg_attr(feature = "swagger", utoipa::path(
+#[cfg_attr(all(feature = "swagger", debug_assertions),
+    utoipa::path(
         post,
         context_path = ApiV1::to_path(),
         path = "/logout",
