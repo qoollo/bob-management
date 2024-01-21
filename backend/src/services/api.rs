@@ -16,6 +16,7 @@ use super::prelude::*;
         ),
         security(("api_key" = []))
 ))]
+#[tracing::instrument(ret, skip(client), level = "info", fields(method = "GET"))]
 pub async fn get_disks_count(Extension(client): Extension<HttpBobClient>) -> Json<DiskCount> {
     tracing::info!("get /disks/count : {:?}", client);
 
@@ -83,6 +84,7 @@ pub async fn get_disks_count(Extension(client): Extension<HttpBobClient>) -> Jso
         ),
         security(("api_key" = []))
 ))]
+#[tracing::instrument(ret, skip(client), level = "info", fields(method = "GET"))]
 pub async fn get_nodes_count(Extension(client): Extension<HttpBobClient>) -> Json<NodeCount> {
     tracing::info!("get /nodes/count : {:?}", client);
 
@@ -130,6 +132,7 @@ pub async fn get_nodes_count(Extension(client): Extension<HttpBobClient>) -> Jso
         ),
         security(("api_key" = []))
 ))]
+#[tracing::instrument(ret, skip(client), level = "info", fields(method = "GET"))]
 pub async fn get_rps(Extension(client): Extension<HttpBobClient>) -> Json<RPS> {
     tracing::info!("get /nodes/rps : {:?}", client);
 
@@ -168,6 +171,7 @@ pub async fn get_rps(Extension(client): Extension<HttpBobClient>) -> Json<RPS> {
         ),
         security(("api_key" = []))
 ))]
+#[tracing::instrument(ret, skip(client), level = "info", fields(method = "GET"))]
 pub async fn get_space(Extension(client): Extension<HttpBobClient>) -> Json<SpaceInfo> {
     tracing::info!("get /space : {:?}", client);
     let mut spaces: FuturesUnordered<_> = client

@@ -68,7 +68,7 @@ pub async fn login(
     Extension(request_timeout): Extension<RequestTimeout>,
     Json(bob): Json<BobConnectionData>,
 ) -> AxumResult<StatusCode> {
-    let bob_client = BobClient::<HttpClient>::try_new(bob.clone(), request_timeout)
+    let bob_client = BobClient::<_, HttpClient>::try_new(bob.clone(), request_timeout)
         .await
         .map_err(|err| {
             tracing::error!("{err:?}");
@@ -109,7 +109,13 @@ pub async fn login(
             tracing::error!("{err:?}");
             StatusCode::UNAUTHORIZED
         })?;
-        auth.client_store.insert(*bob_client.id(), bob_client);
+        auth.client_store
+            .save(*bob_client.id(), bob_client)
+            .await
+            .map_err(|err| {
+                tracing::error!("{err:?}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
     }
 
     Ok(res)
