@@ -1,14 +1,73 @@
 openapi: 3.0.3
 info:
   title: bob-management
-  description: 'Bob Management GUI: Backend'
+  description: Bob Management GUI
   contact:
     name: Romanov Simeon ArchArcheoss@proton.me
   license:
     name: ''
   version: 0.0.0
 paths:
-  /root:
+  /api/v1/login:
+    post:
+      tags:
+      - services::auth
+      summary: Login to a BOB cluster
+      description: |
+        Login to a BOB cluster
+
+        # Errors
+        This function can return the following errors
+
+        1. [`StatusCode::BAD_REQUEST`]
+        The function failed to parse hostname of the request
+
+        2. [`StatusCode::NOT_FOUND`]
+        The client was unable to reach the host
+
+        3. [`StatusCode::UNAUTHORIZED`]
+        The client couldn't authorize on the host
+      operationId: login
+      parameters:
+      - name: hostname
+        in: path
+        description: Address to connect to
+        required: true
+        schema:
+          $ref: '#/components/schemas/Hostname'
+      - name: credentials
+        in: path
+        description: '[Optional] Credentials used for BOB authentication'
+        required: true
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/Credentials'
+          nullable: true
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BobConnectionData'
+        required: true
+      responses:
+        '200':
+          description: Successful authorization
+        '400':
+          description: Bad Hostname
+        '401':
+          description: Bad Credentials
+        '404':
+          description: Can't reach specified hostname
+  /api/v1/logout:
+    post:
+      tags:
+      - services::auth
+      operationId: logout
+      responses:
+        '200':
+          description: Logged out
+  /api/v1/root:
     get:
       tags:
       - crate
@@ -16,6 +75,43 @@ paths:
       responses:
         '200':
           description: Hello Bob!
+components:
+  schemas:
+    BobConnectionData:
+      type: object
+      description: Data needed to connect to a BOB cluster
+      required:
+      - hostname
+      properties:
+        credentials:
+          allOf:
+          - $ref: '#/components/schemas/Credentials'
+          nullable: true
+        hostname:
+          $ref: '#/components/schemas/Hostname'
+      example:
+        credentials:
+          login: archeoss
+          password: '12345'
+        hostname: 0.0.0.0:7000
+    Credentials:
+      type: object
+      description: Optional auth credentials for a BOB cluster
+      required:
+      - login
+      - password
+      properties:
+        login:
+          type: string
+          description: Login used during auth
+        password:
+          type: string
+          description: Password used during auth
+      example:
+        login: archeoss
+        password: '12345'
+    Hostname:
+      $ref: '#/components/schemas/Uri'
 tags:
 - name: bob
   description: BOB management API

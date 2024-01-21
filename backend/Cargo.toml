@@ -1,6 +1,6 @@
 [package]
 name = "bob-management"
-description = "Bob Management GUI: Backend"
+description = "Bob Management GUI"
 publish = false
 keywords = [ "BOB", "Management", "GUI" ]
 version.workspace = true
@@ -13,10 +13,9 @@ repository.workspace = true
 [dependencies]
 # Backend (lib.rs)
 ## Axum related
-axum = "0.6"
+axum = { version = "0.6", features = ["headers"] }
 axum-macros = "0.3"
-axum-login = "0.6"
-axum-sessions = "0.6"
+tower-sessions = "0.5"
 tower = "0.4"
 tower-http = { version = "0.4", features = ["cors", "fs"] }
 
@@ -25,6 +24,7 @@ tracing = "0.1"
 file-rotate = "0.7"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
+# tracing-forest = { version = "0.1", features = ["tokio"] }
 
 ## Error Handling
 error-stack = "0.4"
@@ -32,8 +32,12 @@ thiserror = "1.0"
 
 ## General
 tokio = { version = "1.32", features = ["rt", "macros", "rt-multi-thread" ] }
-hyper = "0.14"
-lazy_static = "1.4"
+hyper = { version = "0.14", features = ["http2", "client"] }
+hyper_serde = "0.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.4", features = ["v4", "serde", "fast-rng"] }
+futures = "0.3"
 
 ## OpenAPI + Swagger
 utoipa = { version = "4.0", features = ["yaml", "axum_extras",  "chrono", "openapi_extensions"], optional = true }
@@ -44,7 +48,14 @@ utoipa-rapidoc = { version = "1.0", features = ["axum"], optional = true }
 ## CLI
 cli = { path = "../cli" }
 
+# Macro 
+proc-macro = { path = "../proc_macro" }
+
+[dev-dependencies]
+utoipa = { version = "4.0", features = ["yaml", "axum_extras",  "chrono", "openapi_extensions"]}
+
 [features]
 default = [ "swagger" ]
 swagger = [ "dep:utoipa", "dep:utoipa-swagger-ui" , "dep:utoipa-redoc", "dep:utoipa-rapidoc" ]
 gen_api = [ "dep:utoipa" ]
+

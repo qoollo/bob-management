@@ -2,15 +2,14 @@ use crate::prelude::*;
 use axum::body::HttpBody;
 use axum::routing::on;
 use axum::{handler::Handler, routing::MethodFilter, Router};
-use hyper::{Body, Method};
 use std::convert::Infallible;
-use std::marker::PhantomData;
 use std::ops::Deref;
 use thiserror::Error;
-use utoipa::OpenApi;
 
 #[cfg(all(feature = "swagger", debug_assertions))]
 use utoipa::openapi::PathItemType;
+#[cfg(all(feature = "swagger", debug_assertions))]
+use utoipa::OpenApi;
 
 #[derive(Clone, Debug, Error, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RouteError {
@@ -28,13 +27,16 @@ pub enum RouteError {
     InvalidHandler,
 }
 
+/// Empty Api Context
 pub struct NoApi;
 
 impl<'a> ApiVersion<'a> for NoApi {}
 
+/// Api Context (ver. 1)
 pub struct ApiV1;
 
 pub trait ApiVersion<'a> {
+    /// Provides API context path
     #[must_use]
     fn to_path() -> &'a str {
         ""
@@ -42,6 +44,7 @@ pub trait ApiVersion<'a> {
 }
 
 impl<'a> ApiVersion<'a> for ApiV1 {
+    #[must_use]
     fn to_path() -> &'a str {
         "/api/v1"
     }
@@ -56,7 +59,6 @@ pub struct ContextRouter<Version, Doc, S = (), B = Body> {
 impl<'a, Version, Doc, S, B> ContextRouter<Version, Doc, S, B>
 where
     Version: ApiVersion<'a>,
-    Doc: OpenApi,
     B: HttpBody + Send + 'static,
     S: Clone + Send + Sync + 'static,
 {
@@ -90,29 +92,25 @@ where
     }
 
     /// Add API Route to the `Router`
-    ///
     #[must_use]
-    pub fn api_route<H, T>(mut self, path: &str, method: &Method, handler: H) -> Self
+    #[cfg(not(all(feature = "swagger", debug_assertions)))]
+    pub fn api_route<H, T>(self, path: &str, method: &Method, handler: H) -> Self
     where
         H: Handler<T, S, B>,
         T: 'static,
         S: Clone + Send + Sync + 'static,
         B: HttpBody + Send + 'static,
     {
-        #[cfg(all(feature = "swagger", debug_assertions))]
-        match try_convert_path_item_type_from_method(method)
-            .map(|path_item_type| check_api::<_, _, _, H, Version, Doc>(path, &path_item_type))
-        {
-            Ok(Ok(())) => (),
-            Ok(Err(err)) | Err(err) => {
-                if let Some(errors) = &mut self.api_errors {
-                    errors.extend_one(err);
-                } else {
-                    self.api_errors = Some(err);
-                }
-            }
-        }
+        self.apply_handler::<H, T>(path, method, handler)
+    }
 
+    fn apply_handler<H, T>(mut self, path: &str, method: &Method, handler: H) -> Self
+    where
+        H: Handler<T, S, B>,
+        T: 'static,
+        S: Clone + Send + Sync + 'static,
+        B: HttpBody + Send + 'static,
+    {
         match try_convert_method_filter_from_method(method) {
             Ok(method) => self.inner = self.inner.route(path, on(method, handler)),
             Err(err) => {
@@ -128,6 +126,53 @@ where
     }
 }
 
+#[cfg(all(feature = "swagger", debug_assertions))]
+impl<'a, Version, Doc, S, B> ContextRouter<Version, Doc, S, B>
+where
+    Version: ApiVersion<'a>,
+    Doc: OpenApi,
+    B: HttpBody + Send + 'static,
+    S: Clone + Send + Sync + 'static,
+{
+    /// Add API Route to the `Router`
+    #[must_use]
+    pub fn api_route<H, T>(self, path: &str, method: &Method, handler: H) -> Self
+    where
+        H: Handler<T, S, B>,
+        T: 'static,
+        S: Clone + Send + Sync + 'static,
+        B: HttpBody + Send + 'static,
+    {
+        // #[cfg(all(feature = "swagger", debug_assertions))]
+        self.check_api::<H, T>(path, method)
+            .apply_handler::<H, T>(path, method, handler)
+    }
+
+    fn check_api<H, T>(mut self, path: &str, method: &Method) -> Self
+    where
+        H: Handler<T, S, B>,
+        T: 'static,
+        S: Clone + Send + Sync + 'static,
+        B: HttpBody + Send + 'static,
+        Doc: OpenApi,
+    {
+        match try_convert_path_item_type_from_method(method)
+            .map(|path_item_type| check_api::<_, _, _, H, Version, Doc>(path, &path_item_type))
+        {
+            Ok(Ok(())) => (),
+            Ok(Err(err)) | Err(err) => {
+                if let Some(errors) = &mut self.api_errors {
+                    errors.extend_one(err);
+                } else {
+                    self.api_errors = Some(err);
+                }
+            }
+        }
+
+        self
+    }
+}
+
 impl<V, D, S, B> Deref for ContextRouter<V, D, S, B> {
     type Target = Router<S, B>;
 
@@ -136,22 +181,38 @@ impl<V, D, S, B> Deref for ContextRouter<V, D, S, B> {
     }
 }
 
+#[cfg(all(feature = "swagger", debug_assertions))]
 pub trait RouterApiExt<S = (), B = Body, E = Infallible> {
     /// Wraps `Router` with `ApiVersion` and `OpenApi` instances into the new context to call
     /// `api_route` with said context
-    fn with_context<'a, Version: ApiVersion<'a>, Doc: OpenApi>(
-        self,
-    ) -> ContextRouter<Version, Doc, S, B>;
+    fn with_context<'a, Version: ApiVersion<'a>, Doc>(self) -> ContextRouter<Version, Doc, S, B>;
 }
 
+#[cfg(not(all(feature = "swagger", debug_assertions)))]
+pub trait RouterApiExt<S = (), B = Body, E = Infallible> {
+    /// Wraps `Router` with `ApiVersion` and `OpenApi` instances into the new context to call
+    /// `api_route` with said context
+    fn with_context<'a, Version: ApiVersion<'a>, Doc>(self) -> ContextRouter<Version, Doc, S, B>;
+}
+
+#[cfg(all(feature = "swagger", debug_assertions))]
 impl<S, B> RouterApiExt<S, B, Infallible> for Router<S, B>
 where
     B: HttpBody + Send + 'static,
     S: Clone + Send + Sync + 'static,
 {
-    fn with_context<'a, Version: ApiVersion<'a>, Doc: OpenApi>(
-        self,
-    ) -> ContextRouter<Version, Doc, S, B> {
+    fn with_context<'a, Version: ApiVersion<'a>, Doc>(self) -> ContextRouter<Version, Doc, S, B> {
+        ContextRouter::new(self)
+    }
+}
+
+#[cfg(not(all(feature = "swagger", debug_assertions)))]
+impl<S, B> RouterApiExt<S, B, Infallible> for Router<S, B>
+where
+    B: HttpBody + Send + 'static,
+    S: Clone + Send + Sync + 'static,
+{
+    fn with_context<'a, Version: ApiVersion<'a>, Doc>(self) -> ContextRouter<Version, Doc, S, B> {
         ContextRouter::new(self)
     }
 }
