@@ -31,6 +31,3 @@ export function getCookie(field: string) {
 export function eraseCookie(name: string) {
     document.cookie = name + '=; Max-Age=-99999999;';
 }
-
-export const refreshTimes = ['1', '5', '15', '30'];
-export type RefreshTime = (typeof refreshTimes)[number];

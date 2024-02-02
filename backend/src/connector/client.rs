@@ -99,7 +99,10 @@ where
     pub fn try_new(base_path: &str) -> Result<Self, ClientInitError> {
         let uri = Uri::from_str(base_path).change_context(ClientInitError::InvalidUri)?;
 
-        let scheme = uri.scheme_str().ok_or(ClientInitError::InvalidScheme)?;
+        let scheme = uri.scheme_str().unwrap_or_else(|| {
+            tracing::info!("couldn't locate URI scheme... Fallback to http");
+            "http"
+        });
         let scheme = scheme.to_ascii_lowercase();
 
         let connector = Connector::builder();
@@ -133,7 +136,10 @@ fn into_base_path(
         .try_into()
         .change_context(ClientInitError::InvalidUri)?;
 
-    let scheme = uri.scheme_str().ok_or(ClientInitError::InvalidScheme)?;
+    let scheme = uri.scheme_str().unwrap_or_else(|| {
+        tracing::info!("couldn't locate URI scheme... Fallback to http");
+        "http"
+    });
 
     // Check the scheme if necessary
     // if let Some(correct_scheme) = correct_scheme {
@@ -308,19 +314,68 @@ where
     /// Return directory of alien
     #[must_use]
     async fn get_alien_dir(&self, context: &C) -> Result<GetAlienDirResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request("/alien/dir", Method::GET, context)
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: Dir| GetAlienDirResponse::Directory(body))
+                .await?),
+            403 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetAlienDirResponse::PermissionDenied(body)
+                })
+                .await?),
+            406 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetAlienDirResponse::NotAcceptableBackend(body)
+                })
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns the list of disks with their states
     #[must_use]
     async fn get_disks(&self, context: &C) -> Result<GetDisksResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request("/disks/list", Method::GET, context)
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: Vec<DiskState>| {
+                    GetDisksResponse::AJSONArrayWithDisksAndTheirStates(body)
+                })
+                .await?),
+            403 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetDisksResponse::PermissionDenied(body)
+                })
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Get metrics
     #[must_use]
     async fn get_metrics(&self, context: &C) -> Result<GetMetricsResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request("/metrics", Method::GET, context)
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: MetricsSnapshotModel| {
+                    GetMetricsResponse::Metrics(body)
+                })
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns a list of known nodes
@@ -335,7 +390,7 @@ where
 
         match response.status().as_u16() {
             200 => Ok(self
-                .handle_response_json(response, |body: Vec<super::dto::Node>| {
+                .handle_response_json(response, |body: Vec<Node>| {
                     GetNodesResponse::AJSONArrayOfNodesInfoAndVdisksOnThem(body)
                 })
                 .await?),
@@ -348,77 +403,269 @@ where
     #[must_use]
     async fn get_partition(
         &self,
-        v_disk_id: i32,
-        partition_id: String,
+        param_v_disk_id: i32,
+        param_partition_id: String,
         context: &C,
     ) -> Result<GetPartitionResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request(
+                &format!("/vdisks/{param_v_disk_id}/partitions/{param_partition_id}"),
+                Method::GET,
+                context,
+            )
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: Partition| {
+                    GetPartitionResponse::AJSONWithPartitionInfo(body)
+                })
+                .await?),
+            403 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetPartitionResponse::PermissionDenied(body)
+                })
+                .await?),
+            404 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetPartitionResponse::NotFound(body)
+                })
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns a list of partitions
     #[must_use]
     async fn get_partitions(
         &self,
-        v_disk_id: i32,
+        param_v_disk_id: i32,
         context: &C,
     ) -> Result<GetPartitionsResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request(
+                &format!("/vdisks/{param_v_disk_id}/partitions"),
+                Method::GET,
+                context,
+            )
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: VDiskPartitions| {
+                    GetPartitionsResponse::NodeInfoAndJSONArrayWithPartitionsInfo(body)
+                })
+                .await?),
+            403 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetPartitionsResponse::PermissionDenied(body)
+                })
+                .await?),
+
+            404 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetPartitionsResponse::NotFound(body)
+                })
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns count of records of this on node
     #[must_use]
     async fn get_records(
         &self,
-        v_disk_id: i32,
+        param_v_disk_id: i32,
         context: &C,
     ) -> Result<GetRecordsResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request(
+                &format!("/vdisks/{param_v_disk_id}/records/count"),
+                Method::GET,
+                context,
+            )
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, GetRecordsResponse::RecordsCount)
+                .await?),
+            403 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetRecordsResponse::PermissionDenied(body)
+                })
+                .await?),
+            404 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetRecordsResponse::NotFound(body)
+                })
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns directories of local replicas of vdisk
     #[must_use]
     async fn get_replicas_local_dirs(
         &self,
-        v_disk_id: i32,
+        param_v_disk_id: i32,
         context: &C,
     ) -> Result<GetReplicasLocalDirsResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request(
+                &format!("/vdisks/{param_v_disk_id}/replicas/local/dirs"),
+                Method::GET,
+                context,
+            )
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: Vec<Dir>| {
+                    GetReplicasLocalDirsResponse::AJSONArrayWithDirs(body)
+                })
+                .await?),
+            403 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetReplicasLocalDirsResponse::PermissionDenied(body)
+                })
+                .await?),
+            404 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetReplicasLocalDirsResponse::NotFound(body)
+                })
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Get space info
     #[must_use]
     async fn get_space_info(&self, context: &C) -> Result<GetSpaceInfoResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request("/status/space", Method::GET, context)
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: SpaceInfo| {
+                    GetSpaceInfoResponse::SpaceInfo(body)
+                })
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns information about self
     #[must_use]
     async fn get_status(&self, context: &C) -> Result<GetStatusResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request("/status", Method::GET, context)
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: Node| {
+                    GetStatusResponse::AJSONWithNodeInfo(body)
+                })
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns a vdisk info by ID
     #[must_use]
-    async fn get_v_disk(&self, v_disk_id: i32, context: &C) -> Result<GetVDiskResponse, APIError> {
-        todo!()
+    async fn get_v_disk(
+        &self,
+        param_v_disk_id: i32,
+        context: &C,
+    ) -> Result<GetVDiskResponse, APIError> {
+        let request = self
+            .form_request(&format!("/vdisks/{param_v_disk_id}"), Method::GET, context)
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: VDisk| {
+                    GetVDiskResponse::AJSONWithVdiskInfo(body)
+                })
+                .await?),
+            403 => Ok(self
+                .handle_response_json(response, |body: StatusExt| {
+                    GetVDiskResponse::PermissionDenied(body)
+                })
+                .await?),
+            404 => Ok(self
+                .handle_response_json(response, |body: StatusExt| GetVDiskResponse::NotFound(body))
+                .await?),
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns a list of vdisks
     #[must_use]
     async fn get_v_disks(&self, context: &C) -> Result<GetVDisksResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request("/vdisks", Method::GET, context)
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: Vec<VDisk>| {
+                    GetVDisksResponse::AJSONArrayOfVdisksInfo(body)
+                })
+                .await?),
+            403 => Ok(GetVDisksResponse::PermissionDenied),
+
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns server version
     #[must_use]
     async fn get_version(&self, context: &C) -> Result<GetVersionResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request("/version", Method::GET, context)
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: VersionInfo| {
+                    GetVersionResponse::VersionInfo(body)
+                })
+                .await?),
+
+            _ => Err(APIError::from(response))?,
+        }
     }
 
     /// Returns configuration of the node
     #[must_use]
     async fn get_configuration(&self, context: &C) -> Result<GetConfigurationResponse, APIError> {
-        todo!()
+        let request = self
+            .form_request("/configuration", Method::GET, context)
+            .change_context(APIError::RequestFailed)?;
+        let response = self.call(request, context).await?;
+
+        match response.status().as_u16() {
+            200 => Ok(self
+                .handle_response_json(response, |body: NodeConfiguration| {
+                    GetConfigurationResponse::ConfigurationObject(body)
+                })
+                .await?),
+            403 => Ok(GetConfigurationResponse::PermissionDenied),
+
+            _ => Err(APIError::from(response))?,
+        }
     }
 }
 

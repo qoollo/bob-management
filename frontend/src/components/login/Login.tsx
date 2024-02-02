@@ -1,4 +1,4 @@
-import { removeEmpty } from '@components/common.ts';
+import { removeEmpty } from '@appTypes/common.ts';
 import defaultTheme from '@layouts/DefaultTheme.ts';
 import ThemeRegistry from '@layouts/ThemeRegistry.tsx';
 import { Alert, Box, Button, Grid, Snackbar, TextField } from '@mui/material';
@@ -39,7 +39,7 @@ const LoginPage = ({ redirectTo }: { redirectTo: string }) => {
             ),
         });
         if (response.ok) {
-            location.assign(redirectTo);
+            location.replace(redirectTo);
         } else {
             setSnackbarMessage('Wrong data');
             setOpenSnackbar(true);

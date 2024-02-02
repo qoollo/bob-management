@@ -13,3 +13,5 @@ Bob Management GUI changelog
 - Logger Initialization (#14)
 - Login Page, backend (#16)
 - Login Page, frontend (#17)
+- Home page, backend (#18)
+- Home page, frontend (#22)

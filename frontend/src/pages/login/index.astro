@@ -1,10 +1,10 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import LoginPage from '../../components/login/Login.tsx';
+import LoginPage from '@components/login/Login.tsx';
 ---
 
-<Layout title="Welcome to Bob.">
+<Layout title="BOB: Login">
     <main>
-        <LoginPage redirectTo={'/'} client:only />
+        <LoginPage redirectTo={'/dashboard'} client:only />
     </main>
 </Layout>

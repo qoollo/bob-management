@@ -1,5 +1,6 @@
-import { cookieAuthId, eraseCookie, getCookie, refreshTimes } from '@components/common.ts';
-import { Context } from '@components/Context.ts';
+import { cookieAuthId, eraseCookie, getCookie } from '@appTypes/common.ts';
+import { Context, refreshTimes } from '@appTypes/context.ts';
+import { isLocation, type NavLocation } from '@appTypes/navigation.ts';
 import defaultTheme from '@layouts/DefaultTheme.ts';
 import { ExitToApp } from '@mui/icons-material';
 import {
@@ -21,38 +22,28 @@ import { ThemeProvider } from '@mui/material/styles';
 import { useStore } from '@nanostores/react';
 import BrandMark from 'public/brandmark.svg';
 import React, { useEffect, useState } from 'react';
-// import type { RefreshTimes } from '../../env.d.ts';
 
 const Navbar = ({ logoutRedirectTo }: { logoutRedirectTo: string }) => {
     const context = useStore(Context);
-    const [value, setValue] = useState(0);
+    const [tab, setTab] = useState('/dashboard' as NavLocation);
     const [refresh, setRefresh] = useState(context.refreshTime);
+    // FIXME: button's render is not on the same state on page refresh as the context (always on)
+    // I hate react....
     const [switchButton, setSwitchButton] = useState(context.enabled);
 
+    const path = window.location.pathname.replace(/\/$/, '');
     useEffect(() => {
-        const path = window.location.pathname;
-        if (path === '/dashboard') {
-            setValue(0);
-        } else if (path === '/nodelist') {
-            setValue(1);
-        } else if (path === '/vdisklist') {
-            setValue(2);
+        // setSwitchButton(Context.get().enabled);
+        if (isLocation(path)) {
+            setTab(path);
         }
-    }, []);
+    }, [setSwitchButton, context, switchButton, path]);
 
-    const updateContext = () => {
-        Context.set({
-            refreshTime: refresh,
-            enabled: switchButton,
-        });
-    };
-
-    const pathname = window.location.pathname.replace(/\/$/, '');
-    if (getCookie('id') === '' && pathname !== '/login') {
-        location.assign(logoutRedirectTo);
+    if (getCookie('id') === '' && path !== '/login') {
+        location.replace(logoutRedirectTo);
     }
 
-    if (pathname === '/login') {
+    if (path === '/login') {
         return <div></div>;
     }
 
@@ -61,7 +52,7 @@ const Navbar = ({ logoutRedirectTo }: { logoutRedirectTo: string }) => {
             method: 'POST',
         });
         eraseCookie(cookieAuthId);
-        location.assign(logoutRedirectTo);
+        location.replace(logoutRedirectTo);
     }
 
     return (
@@ -87,28 +78,30 @@ const Navbar = ({ logoutRedirectTo }: { logoutRedirectTo: string }) => {
                         <Tabs
                             indicatorColor="primary"
                             textColor="secondary"
-                            value={value}
+                            value={tab}
                             onChange={(e, val) => {
-                                setValue(val);
-                                updateContext();
+                                setTab(val);
                             }}
                         >
                             <Tab
                                 label="Monitoring"
                                 component={Link}
-                                href="dashboard"
+                                href="/dashboard"
+                                value={'/dashboard' as NavLocation}
                                 style={{ textTransform: 'none', fontSize: '16px' }}
                             />
                             <Tab
                                 label="Nodes"
                                 component={Link}
-                                href="nodelist"
+                                href="/nodelist"
+                                value={'/nodelist' as NavLocation}
                                 style={{ textTransform: 'none', fontSize: '16px' }}
                             />
                             <Tab
                                 label="Virtual disks"
                                 component={Link}
-                                href="vdisklist"
+                                href="/vdisklist"
+                                value={'/vdisklist' as NavLocation}
                                 style={{ textTransform: 'none', fontSize: '16px' }}
                             />
                         </Tabs>
@@ -124,16 +117,13 @@ const Navbar = ({ logoutRedirectTo }: { logoutRedirectTo: string }) => {
                         }}
                     >
                         <FormControlLabel
-                            value="stop"
-                            control={
-                                <Switch
-                                    onChange={(e, c) => {
-                                        setSwitchButton(c);
-                                        updateContext();
-                                    }}
-                                />
-                            }
-                            label="STOP"
+                            value={switchButton}
+                            control={switchButton ? <Switch defaultChecked /> : <Switch />}
+                            onChange={() => {
+                                setSwitchButton(!switchButton);
+                                Context.setKey('enabled', !switchButton);
+                            }}
+                            label={'STOP: ' + switchButton}
                             labelPlacement="start"
                             sx={{
                                 '&.MuiFormControlLabel-labelPlacementStart': {
@@ -156,10 +146,11 @@ const Navbar = ({ logoutRedirectTo }: { logoutRedirectTo: string }) => {
                                 labelId="polling-select-label-id"
                                 id="pollint-select-id"
                                 label="min"
-                                value={refresh}
+                                // value={refresh}
+                                defaultValue={refresh}
                                 onChange={(e) => {
                                     setRefresh(e.target.value);
-                                    updateContext();
+                                    Context.setKey('refreshTime', e.target.value);
                                 }}
                             >
                                 {refreshTimes.map((val: string) => (
@@ -179,7 +170,6 @@ const Navbar = ({ logoutRedirectTo }: { logoutRedirectTo: string }) => {
                             <IconButton
                                 onClick={() => {
                                     handleLogout();
-                                    updateContext();
                                 }}
                                 color="inherit"
                             >

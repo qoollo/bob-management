@@ -23,7 +23,7 @@
             "react": ["node_modules/@types/react"],
             "@components/*": ["src/components/*"],
             "@layouts/*": ["src/layouts/*"],
-            "@types/*": ["src/types/*"]
+            "@appTypes/*": ["src/types/*"]
         }
     }
 }

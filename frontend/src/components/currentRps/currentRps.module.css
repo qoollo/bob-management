@@ -1,0 +1,31 @@
+.greendot {
+    height: 16px;
+    width: 16px;
+    background-color: #34b663;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.reddot {
+    height: 16px;
+    width: 16px;
+    background-color: #c3234b;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.graydot {
+    height: 16px;
+    width: 16px;
+    background-color: #7b817e;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.orangedot {
+    height: 16px;
+    width: 16px;
+    background-color: #ff6936;
+    border-radius: 50%;
+    display: inline-block;
+}

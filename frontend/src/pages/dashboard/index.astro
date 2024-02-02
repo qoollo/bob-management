@@ -1,0 +1,10 @@
+---
+import Layout from '@layouts/Layout.astro';
+import Dashboard from '@components/dashboard/Dashboard.tsx';
+---
+
+<Layout title="BOB: Dashboard">
+    <main>
+        <Dashboard client:only />
+    </main>
+</Layout>
