@@ -5,31 +5,31 @@ info:
   contact:
     name: Romanov Simeon ArchArcheoss@proton.me
   license:
-    name: ""
+    name: ''
   version: 0.0.0
 paths:
   /api/v1/disks/count:
     get:
       tags:
-        - services::api
+      - services::api
       summary: Returns count of Physical Disks per status
       description: Returns count of Physical Disks per status
       operationId: get_disks_count
       responses:
-        "200":
+        '200':
           description: Returns a list with count of physical disks per status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DiskCount"
-        "401":
+                $ref: '#/components/schemas/DiskCount'
+        '401':
           description: Unauthorized
       security:
-        - api_key: []
+      - api_key: []
   /api/v1/login:
     post:
       tags:
-        - services::auth
+      - services::auth
       summary: Login to a BOB cluster
       description: |
         Login to a BOB cluster
@@ -47,123 +47,123 @@ paths:
         The client couldn't authorize on the host
       operationId: login
       parameters:
-        - name: hostname
-          in: path
-          description: Address to connect to
-          required: true
-          schema:
-            $ref: "#/components/schemas/Hostname"
-        - name: credentials
-          in: path
-          description: "[Optional] Credentials used for BOB authentication"
-          required: true
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/Credentials"
-            nullable: true
+      - name: hostname
+        in: path
+        description: Address to connect to
+        required: true
+        schema:
+          $ref: '#/components/schemas/Hostname'
+      - name: credentials
+        in: path
+        description: '[Optional] Credentials used for BOB authentication'
+        required: true
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/Credentials'
+          nullable: true
       requestBody:
-        description: ""
+        description: ''
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/BobConnectionData"
+              $ref: '#/components/schemas/BobConnectionData'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful authorization
-        "400":
+        '400':
           description: Bad Hostname
-        "401":
+        '401':
           description: Bad Credentials
-        "404":
+        '404':
           description: Can't reach specified hostname
   /api/v1/logout:
     post:
       tags:
-        - services::auth
+      - services::auth
       operationId: logout
       responses:
-        "200":
+        '200':
           description: Logged out
   /api/v1/nodes/count:
     get:
       tags:
-        - services::api
+      - services::api
       summary: Get Nodes count per Status
       description: Get Nodes count per Status
       operationId: get_nodes_count
       responses:
-        "200":
+        '200':
           description: Node count list per status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NodeCount"
-        "401":
+                $ref: '#/components/schemas/NodeCount'
+        '401':
           description: Unauthorized
       security:
-        - api_key: []
+      - api_key: []
   /api/v1/nodes/rps:
     get:
       tags:
-        - services::api
+      - services::api
       summary: Returns Total RPS on cluster
       description: Returns Total RPS on cluster
       operationId: get_rps
       responses:
-        "200":
+        '200':
           description: RPS list per operation on all nodes
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RPS"
-        "401":
+                $ref: '#/components/schemas/RPS'
+        '401':
           description: Unauthorized
       security:
-        - api_key: []
+      - api_key: []
   /api/v1/nodes/space:
     get:
       tags:
-        - services::api
+      - services::api
       summary: Return inforamtion about space on cluster
       description: Return inforamtion about space on cluster
       operationId: get_space
       responses:
-        "200":
+        '200':
           description: Cluster Space Information
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SpaceInfo"
-        "401":
+                $ref: '#/components/schemas/SpaceInfo'
+        '401':
           description: Unauthorized
       security:
-        - api_key: []
+      - api_key: []
 components:
   schemas:
     BobConnectionData:
       type: object
       description: Data needed to connect to a BOB cluster
       required:
-        - hostname
+      - hostname
       properties:
         credentials:
           allOf:
-            - $ref: "#/components/schemas/Credentials"
+          - $ref: '#/components/schemas/Credentials'
           nullable: true
         hostname:
-          $ref: "#/components/schemas/Hostname"
+          $ref: '#/components/schemas/Hostname'
       example:
         credentials:
           login: archeoss
-          password: "12345"
+          password: '12345'
         hostname: 0.0.0.0:7000
     Credentials:
       type: object
       description: Optional auth credentials for a BOB cluster
       required:
-        - login
-        - password
+      - login
+      - password
       properties:
         login:
           type: string
@@ -173,14 +173,14 @@ components:
           description: Password used during auth
       example:
         login: archeoss
-        password: "12345"
+        password: '12345'
     DiskCount:
       type: object
       description: Disk count by their status
       required:
-        - good
-        - bad
-        - offline
+      - good
+      - bad
+      - offline
       properties:
         bad:
           type: integer
@@ -202,38 +202,38 @@ components:
       type: string
       description: Defines kind of problem on disk
       enum:
-        - freeSpaceRunningOut
+      - freeSpaceRunningOut
     DiskStatus:
       oneOf:
-        - type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              enum:
-                - good
-        - type: object
-          required:
-            - status
-            - problems
-          properties:
-            problems:
-              type: array
-              items:
-                $ref: "#/components/schemas/DiskProblem"
-            status:
-              type: string
-              enum:
-                - bad
-        - type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              enum:
-                - offline
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - good
+      - type: object
+        required:
+        - status
+        - problems
+        properties:
+          problems:
+            type: array
+            items:
+              $ref: '#/components/schemas/DiskProblem'
+          status:
+            type: string
+            enum:
+            - bad
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - offline
       description: |-
         Defines disk status
 
@@ -245,16 +245,16 @@ components:
       type: string
       description: Defines disk status names
       enum:
-        - good
-        - bad
-        - offline
+      - good
+      - bad
+      - offline
     Hostname:
       type: string
     MetricsEntryModel:
       type: object
       required:
-        - value
-        - timestamp
+      - value
+      - timestamp
       properties:
         timestamp:
           type: integer
@@ -267,12 +267,12 @@ components:
     MetricsSnapshotModel:
       type: object
       required:
-        - metrics
+      - metrics
       properties:
         metrics:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/MetricsEntryModel"
+            $ref: '#/components/schemas/MetricsEntryModel'
     NodeConfiguration:
       type: object
       properties:
@@ -286,9 +286,9 @@ components:
       type: object
       description: Node count by their status
       required:
-        - good
-        - bad
-        - offline
+      - good
+      - bad
+      - offline
       properties:
         bad:
           type: integer
@@ -310,42 +310,42 @@ components:
       type: string
       description: Defines kind of problem on Node
       enum:
-        - aliensExists
-        - corruptedExists
-        - freeSpaceRunningOut
-        - virtualMemLargerThanRAM
-        - highCPULoad
+      - aliensExists
+      - corruptedExists
+      - freeSpaceRunningOut
+      - virtualMemLargerThanRAM
+      - highCPULoad
     NodeStatus:
       oneOf:
-        - type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              enum:
-                - good
-        - type: object
-          required:
-            - status
-            - problems
-          properties:
-            problems:
-              type: array
-              items:
-                $ref: "#/components/schemas/NodeProblem"
-            status:
-              type: string
-              enum:
-                - bad
-        - type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              enum:
-                - offline
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - good
+      - type: object
+        required:
+        - status
+        - problems
+        properties:
+          problems:
+            type: array
+            items:
+              $ref: '#/components/schemas/NodeProblem'
+          status:
+            type: string
+            enum:
+            - bad
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - offline
       description: |-
         Defines status of node
 
@@ -358,25 +358,25 @@ components:
       type: string
       description: Defines node status names
       enum:
-        - good
-        - bad
-        - offline
+      - good
+      - bad
+      - offline
     Operation:
       type: string
       description: Types of operations on BOB cluster
       enum:
-        - put
-        - get
-        - exist
-        - delete
+      - put
+      - get
+      - exist
+      - delete
     RPS:
       type: object
       description: Requests per second by operation
       required:
-        - put
-        - get
-        - exist
-        - delete
+      - put
+      - get
+      - exist
+      - delete
       properties:
         delete:
           type: integer
@@ -402,52 +402,52 @@ components:
     RawMetricEntry:
       type: string
       enum:
-        - cluster_grinder.get_count_rate
-        - cluster_grinder.put_count_rate
-        - cluster_grinder.exist_count_rate
-        - cluster_grinder.delete_count_rate
-        - pearl.exist_count_rate
-        - pearl.get_count_rate
-        - pearl.put_count_rate
-        - pearl.delete_count_rate
-        - backend.alien_count
-        - backend.corrupted_blob_count
-        - hardware.bob_virtual_ram
-        - hardware.total_ram
-        - hardware.used_ram
-        - hardware.bob_cpu_load
-        - hardware.free_space
-        - hardware.total_space
-        - hardware.descr_amount
+      - cluster_grinder.get_count_rate
+      - cluster_grinder.put_count_rate
+      - cluster_grinder.exist_count_rate
+      - cluster_grinder.delete_count_rate
+      - pearl.exist_count_rate
+      - pearl.get_count_rate
+      - pearl.put_count_rate
+      - pearl.delete_count_rate
+      - backend.alien_count
+      - backend.corrupted_blob_count
+      - hardware.bob_virtual_ram
+      - hardware.total_ram
+      - hardware.used_ram
+      - hardware.bob_cpu_load
+      - hardware.free_space
+      - hardware.total_space
+      - hardware.descr_amount
     ReplicaProblem:
       type: string
       description: Reasons why Replica is offline
       enum:
-        - nodeUnavailable
-        - diskUnavailable
+      - nodeUnavailable
+      - diskUnavailable
     ReplicaStatus:
       oneOf:
-        - type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              enum:
-                - good
-        - type: object
-          required:
-            - status
-            - problems
-          properties:
-            problems:
-              type: array
-              items:
-                $ref: "#/components/schemas/ReplicaProblem"
-            status:
-              type: string
-              enum:
-                - offline
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - good
+      - type: object
+        required:
+        - status
+        - problems
+        properties:
+          problems:
+            type: array
+            items:
+              $ref: '#/components/schemas/ReplicaProblem'
+          status:
+            type: string
+            enum:
+            - offline
       description: |-
         Replica status. It's either good or offline with the reasons why it is offline
 
@@ -460,10 +460,10 @@ components:
       type: object
       description: Disk space information in bytes
       required:
-        - total_disk
-        - free_disk
-        - used_disk
-        - occupied_disk
+      - total_disk
+      - free_disk
+      - used_disk
+      - occupied_disk
       properties:
         free_disk:
           type: integer
@@ -489,29 +489,29 @@ components:
       type: object
       description: Raw metrics information
       required:
-        - cluster_grinder.get_count_rate
-        - cluster_grinder.put_count_rate
-        - cluster_grinder.exist_count_rate
-        - cluster_grinder.delete_count_rate
-        - pearl.exist_count_rate
-        - pearl.get_count_rate
-        - pearl.put_count_rate
-        - pearl.delete_count_rate
-        - backend.alien_count
-        - backend.corrupted_blob_count
-        - hardware.bob_virtual_ram
-        - hardware.total_ram
-        - hardware.used_ram
-        - hardware.bob_cpu_load
-        - hardware.free_space
-        - hardware.total_space
-        - hardware.descr_amount
+      - cluster_grinder.get_count_rate
+      - cluster_grinder.put_count_rate
+      - cluster_grinder.exist_count_rate
+      - cluster_grinder.delete_count_rate
+      - pearl.exist_count_rate
+      - pearl.get_count_rate
+      - pearl.put_count_rate
+      - pearl.delete_count_rate
+      - backend.alien_count
+      - backend.corrupted_blob_count
+      - hardware.bob_virtual_ram
+      - hardware.total_ram
+      - hardware.used_ram
+      - hardware.bob_cpu_load
+      - hardware.free_space
+      - hardware.total_space
+      - hardware.descr_amount
       properties:
         backend.alien_count:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -524,8 +524,8 @@ components:
         backend.corrupted_blob_count:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -538,8 +538,8 @@ components:
         cluster_grinder.delete_count_rate:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -552,8 +552,8 @@ components:
         cluster_grinder.exist_count_rate:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -566,8 +566,8 @@ components:
         cluster_grinder.get_count_rate:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -580,8 +580,8 @@ components:
         cluster_grinder.put_count_rate:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -594,8 +594,8 @@ components:
         hardware.bob_cpu_load:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -608,8 +608,8 @@ components:
         hardware.bob_virtual_ram:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -622,8 +622,8 @@ components:
         hardware.descr_amount:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -636,8 +636,8 @@ components:
         hardware.free_space:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -650,8 +650,8 @@ components:
         hardware.total_ram:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -664,8 +664,8 @@ components:
         hardware.total_space:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -678,8 +678,8 @@ components:
         hardware.used_ram:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -692,8 +692,8 @@ components:
         pearl.delete_count_rate:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -706,8 +706,8 @@ components:
         pearl.exist_count_rate:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -720,8 +720,8 @@ components:
         pearl.get_count_rate:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -734,8 +734,8 @@ components:
         pearl.put_count_rate:
           type: object
           required:
-            - value
-            - timestamp
+          - value
+          - timestamp
           properties:
             timestamp:
               type: integer
@@ -799,30 +799,30 @@ components:
           value: 0
     VDiskStatus:
       oneOf:
-        - type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              enum:
-                - good
-        - type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              enum:
-                - bad
-        - type: object
-          required:
-            - status
-          properties:
-            status:
-              type: string
-              enum:
-                - offline
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - good
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - bad
+      - type: object
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - offline
       description: |-
         Virtual disk status.
 
@@ -836,5 +836,5 @@ components:
       in: header
       name: bob_apikey
 tags:
-  - name: bob
-    description: BOB management API
+- name: bob
+  description: BOB management API
