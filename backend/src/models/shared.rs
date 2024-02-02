@@ -53,7 +53,7 @@ impl TryFrom<Hostname> for SocketAddr {
     type Error = std::net::AddrParseError;
 
     fn try_from(value: Hostname) -> Result<Self, Self::Error> {
-        value.to_string().parse()
+        value.0.to_string().parse()
     }
 }
 
@@ -71,6 +71,7 @@ impl ToString for Hostname {
 )]
 #[cfg_attr(all(feature = "swagger", debug_assertions),
     schema(example = json!({"hostname": "0.0.0.0:7000", "credentials": {"login": "archeoss", "password": "12345"}})))]
+#[tsync]
 pub struct BobConnectionData {
     /// Address to connect to
     pub hostname: Hostname,
@@ -84,6 +85,7 @@ pub struct BobConnectionData {
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[cfg_attr(all(feature = "swagger", debug_assertions), schema(example = json!({"login": "archeoss", "password": "12345"})))]
+#[tsync]
 pub struct Credentials {
     /// Login used during auth
     pub login: String,

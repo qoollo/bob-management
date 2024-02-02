@@ -5,6 +5,7 @@
 )]
 
 use bob_management::main::prelude::*;
+use cli::Config;
 
 const FRONTEND_FOLDER: &str = "frontend";
 
@@ -19,17 +20,12 @@ async fn main() -> Result<(), AppError> {
     let _guard = logger.init_logger().unwrap();
     tracing::info!("Logger: {logger:?}");
 
-    let cors: CorsLayer = config.get_cors_configuration();
-    tracing::info!("CORS: {cors:?}");
-
     let addr = config.address;
     tracing::info!("Listening on {addr}");
 
-    let app = router(cors);
+    let app = router(&config);
     #[cfg(all(feature = "swagger", debug_assertions))]
-    let app = app
-        .merge(bob_management::openapi_doc())
-        .layer(Extension(RequestTimeout::from(config.request_timeout)));
+    let app = app.merge(bob_management::openapi_doc());
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
@@ -41,7 +37,7 @@ async fn main() -> Result<(), AppError> {
 }
 
 #[allow(clippy::unwrap_used, clippy::expect_used)]
-fn router(cors: CorsLayer) -> Router {
+fn router(config: &Config) -> Router {
     let session_store = MemoryStore::default();
     let session_service = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(|err: BoxError| async move {
@@ -50,7 +46,8 @@ fn router(cors: CorsLayer) -> Router {
         }))
         .layer(
             SessionManagerLayer::new(session_store)
-                .with_expiry(tower_sessions::Expiry::OnSessionEnd),
+                .with_expiry(tower_sessions::Expiry::OnSessionEnd)
+                .with_http_only(false),
         );
 
     let user_store: InMemorySessionStore<Uuid, BobUser> = InMemorySessionStore::default();
@@ -69,7 +66,8 @@ fn router(cors: CorsLayer) -> Router {
             ApiV1::to_path(),
             api_router_v1(auth_state.clone())
                 .expect("couldn't get API routes")
-                .layer(ServiceBuilder::new().layer(cors)),
+                .layer(ServiceBuilder::new().layer(config.get_cors_configuration()))
+                .layer(Extension(RequestTimeout::from(config.request_timeout))),
         )
         .layer(session_service)
         .with_state(auth_state)
