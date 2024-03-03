@@ -75,16 +75,16 @@ const columns: GridColDef[] = [
 const DiskTable = ({ disks }: { disks: Disk[] }) => {
     const data = disks
         ? disks
-            .map((disk, i) => {
-                return {
-                    id: i,
-                    name: disk.name,
-                    ops: disk.iops,
-                    status: disk.status,
-                    usedspace: { totalSpace: disk.totalSpace, usedSpace: disk.usedSpace } as Space,
-                } as DiskTableCols;
-            })
-            .sort((a, b) => (a.name < b.name ? 1 : -1))
+              .map((disk, i) => {
+                  return {
+                      id: i,
+                      name: disk.name,
+                      ops: disk.iops,
+                      status: disk.status,
+                      usedspace: { totalSpace: disk.totalSpace, usedSpace: disk.usedSpace } as Space,
+                  } as DiskTableCols;
+              })
+              .sort((a, b) => (a.name < b.name ? 1 : -1))
         : [];
     return (
         <Box
