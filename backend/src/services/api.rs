@@ -1,4 +1,8 @@
-use super::prelude::*;
+use super::{auth::HttpClient, prelude::*};
+
+// TODO: For methods, that requires information from all nodes (/disks/count, /nodes/rps, etc.),
+// think of better method of returning info
+// another thread that constantly updates info in period and cache the results?
 
 // TODO: For methods, that requires information from all nodes (/disks/count, /nodes/rps, etc.),
 // think of better method of returning info
@@ -457,4 +461,28 @@ pub async fn raw_configuration_by_node(
         )
         .await?,
     ))
+}
+
+async fn get_client_by_node(
+    client: &HttpBobClient,
+    node_name: NodeName,
+) -> AxumResult<Arc<HttpClient>> {
+    let nodes = fetch_nodes(client.api_main()).await?;
+
+    let node = nodes
+        .iter()
+        .find(|node| node.name == node_name)
+        .ok_or_else(|| {
+            tracing::error!("Couldn't find specified node");
+            APIError::RequestFailed
+        })?;
+
+    client
+        .cluster_with_addr()
+        .get(&node.name)
+        .ok_or_else(|| {
+            tracing::error!("Couldn't find specified node");
+            APIError::RequestFailed.into()
+        })
+        .cloned()
 }

@@ -1,0 +1,10 @@
+---
+import Layout from '@layouts/Layout.astro';
+import VDiskPage from '@components/VDiskList/VDiskList.tsx';
+---
+
+<Layout title="BOB: Dashboard">
+    <main>
+        <VDiskPage client:only />
+    </main>
+</Layout>

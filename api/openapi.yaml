@@ -240,6 +240,65 @@ paths:
           description: Node Not Found
       security:
       - api_key: []
+  /api/v1/vdisks/list:
+    get:
+      tags:
+      - services::api
+      summary: Returns simple list of all known vdisks
+      description: |-
+        Returns simple list of all known vdisks
+
+        # Errors
+
+        This function will return an error if a call to the primary node will fail
+      operationId: get_vdisks_list
+      responses:
+        '200':
+          description: Simple Node List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/dto.VDisk'
+        '401':
+          description: Unauthorized
+      security:
+      - api_key: []
+  /api/v1/vdisks/{vdisk_id}:
+    get:
+      tags:
+      - services::api
+      summary: Returns vdisk inforamtion by their id
+      description: |-
+        Returns vdisk inforamtion by their id
+
+        # Errors
+
+        This function will return an error if a call to the main node will fail or vdisk with
+        specified id not found
+      operationId: get_vdisk_info
+      parameters:
+      - name: vdisk_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+      responses:
+        '200':
+          description: VDisk Inforamtion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VDisk'
+        '401':
+          description: Unauthorized
+        '404':
+          description: VDisk not found
+      security:
+      - api_key: []
 components:
   schemas:
     BobConnectionData:
@@ -310,26 +369,26 @@ components:
       type: object
       description: Disk count by their status
       required:
-      - good
-      - bad
-      - offline
+      - Good
+      - Bad
+      - Offline
       properties:
-        bad:
+        Bad:
           type: integer
           format: int64
           minimum: 0
-        good:
+        Good:
           type: integer
           format: int64
           minimum: 0
-        offline:
+        Offline:
           type: integer
           format: int64
           minimum: 0
       example:
-        bad: 0
-        good: 0
-        offline: 0
+        Bad: 0
+        Good: 0
+        Offline: 0
     DiskProblem:
       type: string
       description: Defines kind of problem on disk
@@ -344,7 +403,7 @@ components:
           status:
             type: string
             enum:
-            - good
+            - Good
       - type: object
         required:
         - status
@@ -362,7 +421,7 @@ components:
           status:
             type: string
             enum:
-            - bad
+            - Bad
       - type: object
         required:
         - status
@@ -370,7 +429,7 @@ components:
           status:
             type: string
             enum:
-            - offline
+            - Offline
       description: |-
         Defines disk status
 
@@ -382,9 +441,9 @@ components:
       type: string
       description: Defines disk status names
       enum:
-      - good
-      - bad
-      - offline
+      - Good
+      - Bad
+      - Offline
     Hostname:
       type: string
     MetricsEntryModel:
@@ -423,26 +482,26 @@ components:
       type: object
       description: Node count by their status
       required:
-      - good
-      - bad
-      - offline
+      - Good
+      - Bad
+      - Offline
       properties:
-        bad:
+        Bad:
           type: integer
           format: int64
           minimum: 0
-        good:
+        Good:
           type: integer
           format: int64
           minimum: 0
-        offline:
+        Offline:
           type: integer
           format: int64
           minimum: 0
       example:
-        bad: 0
-        good: 0
-        offline: 0
+        Bad: 0
+        Good: 0
+        Offline: 0
     NodeInfo:
       type: object
       required:
@@ -497,7 +556,7 @@ components:
           status:
             type: string
             enum:
-            - good
+            - Good
       - type: object
         required:
         - status
@@ -515,7 +574,7 @@ components:
           status:
             type: string
             enum:
-            - bad
+            - Bad
       - type: object
         required:
         - status
@@ -523,7 +582,7 @@ components:
           status:
             type: string
             enum:
-            - offline
+            - Offline
       description: |-
         Defines status of node
 
@@ -536,9 +595,9 @@ components:
       type: string
       description: Defines node status names
       enum:
-      - good
-      - bad
-      - offline
+      - Good
+      - Bad
+      - Offline
     Operation:
       type: string
       description: Types of operations on BOB cluster
@@ -629,7 +688,7 @@ components:
           status:
             type: string
             enum:
-            - good
+            - Good
       - type: object
         required:
         - status
@@ -647,7 +706,7 @@ components:
           status:
             type: string
             enum:
-            - offline
+            - Offline
       description: |-
         Replica status. It's either good or offline with the reasons why it is offline
 
@@ -1021,36 +1080,16 @@ components:
         status:
           $ref: '#/components/schemas/VDiskStatus'
     VDiskStatus:
-      oneOf:
-      - type: object
-        required:
-        - status
-        properties:
-          status:
-            type: string
-            enum:
-            - good
-      - type: object
-        required:
-        - status
-        properties:
-          status:
-            type: string
-            enum:
-            - bad
-      - type: object
-        required:
-        - status
-        properties:
-          status:
-            type: string
-            enum:
-            - offline
+      type: string
       description: |-
         Virtual disk status.
 
         Variants - Virtual Disk status
         status == 'bad' when at least one of its replicas has problems
+      enum:
+      - Good
+      - Bad
+      - Offline
     dto.Node:
       type: object
       required:

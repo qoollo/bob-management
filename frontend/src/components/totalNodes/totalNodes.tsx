@@ -4,19 +4,19 @@ import React from 'react';
 import style from './totalNodes.module.css';
 
 const NodeColor: Record<NodeStatusName, string> = {
-    good: '#5EB36B',
-    bad: '#7C817E',
-    offline: '#B3344D',
+    Good: '#5EB36B',
+    Bad: '#7C817E',
+    Offline: '#B3344D',
 };
 
 const NodeLabelColor: Record<NodeStatusName, string> = {
-    good: style.totalGoodNodesLabel,
-    bad: style.totalBadNodesLabel,
-    offline: style.totalOfflineNodesLabel,
+    Good: style.totalGoodNodesLabel,
+    Bad: style.totalBadNodesLabel,
+    Offline: style.totalOfflineNodesLabel,
 };
 
 const NodeState = ({ nodeCount, status }: { nodeCount: Record<NodeStatusName, number>; status: NodeStatusName }) => {
-    const total = nodeCount.good + nodeCount.bad + nodeCount.offline;
+    const total = nodeCount.Good + nodeCount.Bad + nodeCount.Offline;
     const percent = Math.floor((nodeCount[status] / total) * 100) || 0;
     return (
         <Box
@@ -67,9 +67,9 @@ const TotalNodes = ({ nodeCount: { map: count } }: { nodeCount: NodeCount }) => 
             }}
         >
             <p style={{ fontSize: '16px' }}>State of the nodes in the cluster</p>
-            <NodeState nodeCount={count} status="good" />
-            <NodeState nodeCount={count} status="bad" />
-            <NodeState nodeCount={count} status="offline" />
+            <NodeState nodeCount={count} status="Good" />
+            <NodeState nodeCount={count} status="Bad" />
+            <NodeState nodeCount={count} status="Offline" />
         </Box>
     );
 };
