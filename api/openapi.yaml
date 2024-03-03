@@ -1098,10 +1098,5 @@ components:
       in: header
       name: bob_apikey
 tags:
-<<<<<<< HEAD
-  - name: bob
-    description: BOB management API
-=======
 - name: bob
   description: BOB management API
->>>>>>> 7d85adf (Autogenerate API)
