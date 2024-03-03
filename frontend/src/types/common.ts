@@ -54,6 +54,6 @@ export function proxiedPropertiesOf<TObj>() {
             },
         },
     ) as {
-            [P in keyof TObj]?: P;
-        };
+        [P in keyof TObj]?: P;
+    };
 }
