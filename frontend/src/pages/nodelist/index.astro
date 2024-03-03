@@ -1,5 +1,10 @@
 ---
 import Layout from '@layouts/Layout.astro';
+import NodeListPage from '@components/nodeList/nodeList.tsx';
 ---
 
-<Layout title="BOB: Node List" />
+<Layout title="BOB: Dashboard">
+    <main>
+        <NodeListPage client:only />
+    </main>
+</Layout>

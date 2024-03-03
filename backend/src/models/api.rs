@@ -8,8 +8,33 @@ pub const DEFAULT_MIN_FREE_SPACE_PERCENTAGE: f64 = 0.1;
 /// Connection Data
 pub use crate::models::shared::{BobConnectionData, Credentials};
 
+/// Physical disk definition
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[serde(rename_all = "camelCase")]
+#[tsync]
+pub struct Disk {
+    /// Disk name
+    pub name: String,
+
+    /// Disk path
+    pub path: String,
+
+    /// Disk status
+    // #[serde(flatten)]
+    pub status: DiskStatus,
+
+    #[serde(rename = "totalSpace")]
+    pub total_space: u64,
+
+    #[serde(rename = "usedSpace")]
+    pub used_space: u64,
+
+    pub iops: u64,
+}
+
 /// Defines kind of problem on disk
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Hash)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub enum DiskProblem {
@@ -21,7 +46,7 @@ pub enum DiskProblem {
 ///
 /// Variant - Disk Status
 /// Content - List of problems on disk. 'null' if status != 'bad'
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash)]
 #[serde(tag = "status", content = "problems")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
@@ -29,7 +54,7 @@ pub enum DiskStatus {
     #[serde(rename = "good")]
     Good,
     #[serde(rename = "bad")]
-    Bad(Vec<DiskProblem>),
+    Bad { problems: Vec<DiskProblem> },
     #[serde(rename = "offline")]
     Offline,
 }
@@ -43,7 +68,9 @@ impl DiskStatus {
                 / space.total_disk_space_bytes as f64)
                 < DEFAULT_MIN_FREE_SPACE_PERCENTAGE
             {
-                Self::Bad(vec![DiskProblem::FreeSpaceRunningOut])
+                Self::Bad {
+                    problems: vec![DiskProblem::FreeSpaceRunningOut],
+                }
             } else {
                 Self::Good
             }
@@ -54,7 +81,7 @@ impl DiskStatus {
 }
 
 /// Defines disk status names
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash, EnumIter)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
@@ -64,8 +91,37 @@ pub enum DiskStatusName {
     Offline,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[serde(rename_all = "camelCase")]
+#[tsync]
+pub struct NodeInfo {
+    pub name: String,
+
+    pub hostname: String,
+
+    pub vdisks: Vec<VDisk>,
+    // #[serde(flatten)]
+    pub status: NodeStatus,
+
+    #[serde(rename = "rps")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rps: Option<RPS>,
+
+    #[serde(rename = "alienCount")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alien_count: Option<u64>,
+
+    #[serde(rename = "corruptedCount")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub corrupted_count: Option<u64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub space: Option<SpaceInfo>,
+}
+
 /// Defines kind of problem on Node
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Hash)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub enum NodeProblem {
@@ -108,10 +164,8 @@ impl NodeProblem {
         if node_metrics[RawMetricEntry::HardwareBobCpuLoad].value >= max_cpu {
             res.push(Self::HighCPULoad);
         }
-        if (1.
-            - (node_metrics[RawMetricEntry::HardwareTotalSpace].value
-                - node_metrics[RawMetricEntry::HardwareFreeSpace].value) as f64
-                / node_metrics[RawMetricEntry::HardwareTotalSpace].value as f64)
+        if (node_metrics[RawMetricEntry::HardwareFreeSpace].value as f64
+            / node_metrics[RawMetricEntry::HardwareTotalSpace].value as f64)
             < min_free_space_perc
         {
             res.push(Self::FreeSpaceRunningOut);
@@ -131,7 +185,7 @@ impl NodeProblem {
 /// Variants - Node status
 ///
 /// Content - List of problems on node. 'null' if status != 'bad'
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash)]
 #[serde(tag = "status", content = "problems")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
@@ -139,7 +193,7 @@ pub enum NodeStatus {
     #[serde(rename = "good")]
     Good,
     #[serde(rename = "bad")]
-    Bad(Vec<NodeProblem>),
+    Bad { problems: Vec<NodeProblem> },
     #[serde(rename = "offline")]
     Offline,
 }
@@ -150,7 +204,7 @@ impl NodeStatus {
         if problems.is_empty() {
             Self::Good
         } else {
-            Self::Bad(problems)
+            Self::Bad { problems }
         }
     }
 }
@@ -172,7 +226,7 @@ impl TypedMetrics {
 }
 
 /// Defines node status names
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Hash, EnumIter)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
@@ -182,8 +236,24 @@ pub enum NodeStatusName {
     Offline,
 }
 
+/// [`VDisk`]'s replicas
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[serde(rename_all = "camelCase")]
+#[tsync]
+pub struct Replica {
+    pub node: String,
+
+    pub disk: String,
+
+    pub path: String,
+
+    // #[serde(flatten)]
+    pub status: ReplicaStatus,
+}
+
 /// Reasons why Replica is offline
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub enum ReplicaProblem {
@@ -198,7 +268,7 @@ pub enum ReplicaProblem {
 /// Variants - Replica status
 ///
 /// Content - List of problems on replica. 'null' if status != 'offline'
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 #[serde(tag = "status", content = "problems")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
@@ -206,11 +276,11 @@ pub enum ReplicaStatus {
     #[serde(rename = "good")]
     Good,
     #[serde(rename = "offline")]
-    Offline(Vec<ReplicaProblem>),
+    Offline { problems: Vec<ReplicaProblem> },
 }
 
 /// Disk space information in bytes
-#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Serialize)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub struct SpaceInfo {
@@ -227,16 +297,61 @@ pub struct SpaceInfo {
     pub occupied_disk: u64,
 }
 
+impl From<dto::SpaceInfo> for SpaceInfo {
+    fn from(space: dto::SpaceInfo) -> Self {
+        Self {
+            total_disk: space.total_disk_space_bytes,
+            free_disk: space.total_disk_space_bytes - space.used_disk_space_bytes,
+            used_disk: space.used_disk_space_bytes,
+            occupied_disk: space.occupied_disk_space_bytes,
+        }
+    }
+}
+
+impl AddAssign for SpaceInfo {
+    fn add_assign(&mut self, rhs: Self) {
+        self.total_disk = rhs.total_disk;
+        self.free_disk = rhs.free_disk;
+        self.used_disk = rhs.used_disk;
+        self.occupied_disk = rhs.occupied_disk;
+    }
+}
+
+impl Add for SpaceInfo {
+    type Output = Self;
+
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self += rhs;
+
+        self
+    }
+}
+
+/// Virtual disk Component
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+pub struct VDisk {
+    pub id: u64,
+
+    // #[serde(flatten)]
+    pub status: VDiskStatus,
+
+    #[serde(rename = "partitionCount")]
+    pub partition_count: u64,
+
+    pub replicas: Vec<Replica>,
+}
+
 /// Virtual disk status.
 ///
 /// Variants - Virtual Disk status
 /// status == 'bad' when at least one of its replicas has problems
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 #[serde(tag = "status")]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
-#[cfg_attr(all(feature = "swagger", debug_assertions),
-    schema(example = json!({"status": "good"})))]
 #[tsync]
+// #[cfg_attr(all(feature = "swagger", debug_assertions),
+//     schema(example = json!({"status": "good"})))]
 pub enum VDiskStatus {
     #[serde(rename = "good")]
     Good,
@@ -247,7 +362,7 @@ pub enum VDiskStatus {
 }
 
 /// Types of operations on BOB cluster
-#[derive(Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
+#[derive(Debug, Clone, Serialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[serde(rename_all = "camelCase")]
 #[tsync]
@@ -258,7 +373,7 @@ pub enum Operation {
     Delete,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
+#[derive(Clone, Debug, Serialize, Hash, Eq, PartialEq, PartialOrd, Ord, EnumIter)]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
 #[tsync]
 pub enum RawMetricEntry {
@@ -434,8 +549,6 @@ impl<
     }
 }
 
-// pub type TypedMetrics = TypedMap<RawMetricEntry, MetricsEntryModel>;
-
 impl<Id: IntoEnumIterator + Eq + Hash, V> std::ops::Index<Id> for TypedMap<Id, V> {
     type Output = V;
 
@@ -486,7 +599,11 @@ impl From<dto::MetricsSnapshotModel> for TypedMetrics {
         let mut value = value.metrics;
         for key in RawMetricEntry::iter() {
             let value = value
-                .remove(&serde_json::to_string(&key).expect("infallible"))
+                .remove(
+                    serde_json::to_string(&key)
+                        .expect("infallible")
+                        .trim_matches('"'),
+                )
                 .unwrap_or_default();
             map.insert(key, value);
         }

@@ -409,6 +409,8 @@ impl Ord for MetricsEntryModel {
 impl Eq for MetricsEntryModel {}
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), schema(as = dto::Node))]
 pub struct Node {
     #[serde(rename = "name")]
     pub name: String,
@@ -418,6 +420,7 @@ pub struct Node {
 
     #[serde(rename = "vdisks")]
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(all(feature = "swagger", debug_assertions), schema(value_type = Option<Vec<dto::VDisk>>))]
     pub vdisks: Option<Vec<VDisk>>,
 }
 
@@ -697,6 +700,8 @@ impl std::str::FromStr for Partition {
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), schema(as = dto::Replica))]
 pub struct Replica {
     #[serde(rename = "node")]
     pub node: String,
@@ -896,12 +901,15 @@ impl std::str::FromStr for StatusExt {
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[cfg_attr(all(feature = "swagger", debug_assertions), schema(as = dto::VDisk))]
 pub struct VDisk {
     #[serde(rename = "id")]
     pub id: i32,
 
     #[serde(rename = "replicas")]
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(all(feature = "swagger", debug_assertions), schema(value_type = Option<Vec<dto::Replica>>))]
     pub replicas: Option<Vec<Replica>>,
 }
 

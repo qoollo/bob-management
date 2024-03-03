@@ -1,5 +1,9 @@
 use super::prelude::*;
 
+// TODO: For methods, that requires information from all nodes (/disks/count, /nodes/rps, etc.),
+// think of better method of returning info
+// another thread that constantly updates info in period and cache the results?
+
 /// Returns count of Physical Disks per status
 #[cfg_attr(all(feature = "swagger", debug_assertions),
     utoipa::path(
@@ -58,7 +62,7 @@ pub async fn get_disks_count(Extension(client): Extension<HttpBobClient>) -> Jso
             match DiskStatus::from_space_info(&space, &disk.name) {
                 DiskStatus::Good => count[DiskStatusName::Good] += 1,
                 DiskStatus::Offline => count[DiskStatusName::Offline] += 1,
-                DiskStatus::Bad(_) => count[DiskStatusName::Bad] += 1,
+                DiskStatus::Bad { .. } => count[DiskStatusName::Bad] += 1,
             }
         });
         count[DiskStatusName::Offline] = (disks.len() - active) as u64;
@@ -200,28 +204,257 @@ pub async fn get_space(Extension(client): Extension<HttpBobClient>) -> Json<Spac
     Json(total_space)
 }
 
-#[allow(clippy::cast_precision_loss)]
-fn is_bad_node(node_metrics: &TypedMetrics) -> bool {
-    node_metrics[RawMetricEntry::BackendAlienCount].value != 0
-        || node_metrics[RawMetricEntry::BackendCorruptedBlobCount].value != 0
-        || node_metrics[RawMetricEntry::HardwareBobCpuLoad].value >= DEFAULT_MAX_CPU
-        || (1.
-            - (node_metrics[RawMetricEntry::HardwareTotalSpace].value
-                - node_metrics[RawMetricEntry::HardwareFreeSpace].value) as f64
-                / node_metrics[RawMetricEntry::HardwareTotalSpace].value as f64)
-            < DEFAULT_MIN_FREE_SPACE_PERCENTAGE
-        || node_metrics[RawMetricEntry::HardwareBobVirtualRam]
-            > node_metrics[RawMetricEntry::HardwareTotalRam]
+/// Returns simple list of all known nodes
+///
+/// # Errors
+///
+/// This function will return an error if a call to the primary node will fail
+#[cfg_attr(feature = "swagger", utoipa::path(
+        get,
+        context_path = ApiV1::to_path(),
+        path = "/nodes/list",
+        responses(
+            (
+                status = 200, body = Vec<dto::Node>,
+                content_type = "application/json",
+                description = "Simple Node List"
+            ),
+            (status = 401, description = "Unauthorized")
+        ),
+        security(("api_key" = []))
+    ))]
+pub async fn get_nodes_list(
+    Extension(client): Extension<HttpBobClient>,
+) -> AxumResult<Json<Vec<dto::Node>>> {
+    tracing::info!("get /nodes/list : {client:?}");
+    fetch_nodes(client.api_main()).await.map(Json)
 }
 
-#[allow(clippy::cast_precision_loss)]
-fn disk_status_from_space(space: &dto::SpaceInfo, occupied_space: u64) -> DiskStatus {
-    if ((space.total_disk_space_bytes - occupied_space) as f64
-        / space.total_disk_space_bytes as f64)
-        < DEFAULT_MIN_FREE_SPACE_PERCENTAGE
+/// Returns simple list of all known vdisks
+///
+/// # Errors
+///
+/// This function will return an error if a call to the primary node will fail
+#[cfg_attr(feature = "swagger", utoipa::path(
+        get,
+        context_path = ApiV1::to_path(),
+        path = "/vdisks/list",
+        responses(
+            (
+                status = 200, body = Vec<dto::VDisk>,
+                content_type = "application/json",
+                description = "Simple Node List"
+            ),
+            (status = 401, description = "Unauthorized")
+        ),
+        security(("api_key" = []))
+    ))]
+pub async fn get_vdisks_list(
+    Extension(client): Extension<HttpBobClient>,
+) -> AxumResult<Json<Vec<dto::VDisk>>> {
+    tracing::info!("get /vdisks/list : {client:?}");
+    fetch_vdisks(client.api_main()).await.map(Json)
+}
+/// Returns vdisk inforamtion by their id
+///
+/// # Errors
+///
+/// This function will return an error if a call to the main node will fail or vdisk with
+/// specified id not found
+#[cfg_attr(feature = "swagger", utoipa::path(
+        get,
+        context_path = ApiV1::to_path(),
+        path = "/vdisks/{vdisk_id}",
+        responses(
+            (
+                status = 200, body = VDisk,
+                content_type = "application/json",
+                description = "VDisk Inforamtion"
+            ),
+            (status = 401, description = "Unauthorized"),
+            (status = 404, description = "VDisk not found"),
+        ),
+        security(("api_key" = []))
+    ))]
+pub async fn get_vdisk_info(
+    Extension(client): Extension<HttpBobClient>,
+    Path(vdisk_id): Path<u64>,
+) -> AxumResult<Json<VDisk>> {
+    tracing::info!("get /vdisks/{vdisk_id} : {client:?}");
+    get_vdisk_by_id(&client, vdisk_id).await.map(Json)
+}
+
+/// Returns node inforamtion by their node name
+///
+/// # Errors
+///
+/// This function will return an error if a call to the specified node will fail or node with
+/// specified name not found
+#[cfg_attr(feature = "swagger", utoipa::path(
+        get,
+        context_path = ApiV1::to_path(),
+        path = "/nodes/{node_name}",
+        responses(
+            (
+                status = 200, body = Node,
+                content_type = "application/json",
+                description = "Node Inforamtion"
+            ),
+            (status = 401, description = "Unauthorized"),
+            (status = 404, description = "Node not found"),
+        ),
+        security(("api_key" = []))
+    ))]
+pub async fn get_node_info(
+    Extension(client): Extension<HttpBobClient>,
+    Path(node_name): Path<NodeName>,
+) -> AxumResult<Json<NodeInfo>> {
+    tracing::info!("get /nodes/{node_name} : {client:?}");
+    let handle = Arc::new(
+        client
+            .api_secondary(&node_name)
+            .cloned()
+            .ok_or(StatusCode::NOT_FOUND)?,
+    );
+
+    let nodes = {
+        let handle = client.api_main().clone();
+        tokio::spawn(async move { fetch_nodes(&handle).await })
+    };
+    let status = {
+        let handle = handle.clone();
+        tokio::spawn(async move { handle.get_status().await })
+    };
+    let metrics = {
+        let handle = handle.clone();
+        tokio::spawn(async move { handle.clone().get_metrics().await })
+    };
+    let space_info = {
+        let handle = handle.clone();
+        tokio::spawn(async move { handle.clone().get_space_info().await })
+    };
+
+    let mut node = NodeInfo {
+        name: node_name.clone(),
+        hostname: String::new(),
+        vdisks: vec![],
+        status: NodeStatus::Offline,
+        rps: None,
+        alien_count: None,
+        corrupted_count: None,
+        space: None,
+    };
+
+    let Ok(Ok(GetStatusResponse::AJSONWithNodeInfo(status))) = status.await else {
+        // Fallback to general info
+        node.hostname = if let Ok(Ok(nodes)) = nodes.await {
+            nodes
+                .iter()
+                .find(|node| node.name == node_name)
+                .ok_or(StatusCode::NOT_FOUND)?
+                .address
+                .clone()
+        } else {
+            String::new()
+        };
+        return Ok(Json(node));
+    };
+    node.hostname = status.address;
+
+    let mut vdisks: FuturesUnordered<_> = status
+        .vdisks
+        .iter()
+        .flatten()
+        .map(|vdisk| {
+            let handle = client.clone();
+            let id = vdisk.id as u64;
+            tokio::spawn(async move { get_vdisk_by_id(&handle, id).await })
+        })
+        .collect();
+
+    if let (
+        Ok(Ok(GetMetricsResponse::Metrics(metric))),
+        Ok(Ok(GetSpaceInfoResponse::SpaceInfo(space))),
+    ) = (metrics.await, space_info.await)
     {
-        DiskStatus::Bad(vec![DiskProblem::FreeSpaceRunningOut])
-    } else {
-        DiskStatus::Good
+        let metric = Into::<TypedMetrics>::into(metric);
+        node.status = NodeStatus::from_problems(NodeProblem::default_from_metrics(&metric));
+        node.rps = Some(RPS::from_metrics(&metric));
+        node.alien_count = Some(metric[RawMetricEntry::BackendAlienCount].value);
+        node.corrupted_count = Some(metric[RawMetricEntry::BackendCorruptedBlobCount].value);
+        node.space = Some(SpaceInfo::from(space));
     }
+
+    while let Some(vdisk) = vdisks.next().await {
+        if let Ok(Ok(vdisk)) = vdisk {
+            node.vdisks.push(vdisk);
+        } else {
+            tracing::warn!("some warning"); //TODO
+        }
+    }
+
+    Ok(Json(node))
+}
+
+/// Get Raw Metrics from Node
+///
+/// # Errors
+///
+/// This function will return an error if the server was unable to get node'a client or the request to get metrics fails
+#[cfg_attr(feature = "swagger", utoipa::path(
+        get,
+        context_path = ApiV1::to_path(),
+        path = "/nodes/{node_name}/metrics",
+        responses(
+            (status = 200, body = TypedMetrics, content_type = "application/json", description = "Node's metrics"),
+            (status = 401, description = "Unauthorized"),
+            (status = 404, description = "Node Not Found")
+        ),
+        security(("api_key" = []))
+    ))]
+pub async fn raw_metrics_by_node(
+    Extension(client): Extension<HttpBobClient>,
+    Path(node_name): Path<NodeName>,
+) -> AxumResult<Json<TypedMetrics>> {
+    Ok(Json(
+        fetch_metrics(
+            &client
+                .api_secondary(&node_name)
+                .cloned()
+                .ok_or(StatusCode::NOT_FOUND)?,
+        )
+        .await?
+        .into(),
+    ))
+}
+
+/// Get Configuration from Node
+///
+/// # Errors
+///
+/// This function will return an error if the server was unable to get node'a client or the request to get configuration fails
+#[cfg_attr(feature = "swagger", utoipa::path(
+        get,
+        context_path = ApiV1::to_path(),
+        path = "/nodes/{node_name}/configuration",
+        responses(
+            (status = 200, body = NodeConfiguration, content_type = "application/json", description = "Node's configuration"),
+            (status = 401, description = "Unauthorized"),
+            (status = 404, description = "Node Not Found")
+        ),
+        security(("api_key" = []))
+    ))]
+pub async fn raw_configuration_by_node(
+    Extension(client): Extension<HttpBobClient>,
+    Path(node_name): Path<NodeName>,
+) -> AxumResult<Json<dto::NodeConfiguration>> {
+    Ok(Json(
+        fetch_configuration(
+            &client
+                .api_secondary(&node_name)
+                .cloned()
+                .ok_or(StatusCode::NOT_FOUND)?,
+        )
+        .await?,
+    ))
 }
