@@ -34,8 +34,6 @@ use api::{
 use auth::{login, logout, require_auth, AuthState, BobUser, HttpBobClient, InMemorySessionStore};
 use prelude::*;
 
-use self::api::{get_vdisk_info, get_vdisks_list};
-
 type BobAuthState = AuthState<
     BobUser,
     Uuid,
@@ -60,14 +58,11 @@ pub fn api_router_v1(auth_state: BobAuthState) -> Result<Router<BobAuthState>, R
         .api_route("/nodes/:node_name", &Method::GET, get_node_info)
         .api_route("/vdisks/list", &Method::GET, get_vdisks_list)
         .api_route("/vdisks/:vdisk_id", &Method::GET, get_vdisk_info)
-<<<<<<< HEAD
-=======
         .api_route(
             "/nodes/:node_name/detailed",
             &Method::GET,
             get_detailed_node_info,
         )
->>>>>>> 67e5cea (NodeListPage added)
         .api_route(
             "/nodes/:node_name/metrics",
             &Method::GET,

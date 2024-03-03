@@ -4,10 +4,6 @@ use super::{auth::HttpClient, prelude::*};
 // think of better method of returning info
 // another thread that constantly updates info in period and cache the results?
 
-// TODO: For methods, that requires information from all nodes (/disks/count, /nodes/rps, etc.),
-// think of better method of returning info
-// another thread that constantly updates info in period and cache the results?
-
 /// Returns count of Physical Disks per status
 #[cfg_attr(all(feature = "swagger", debug_assertions),
     utoipa::path(
@@ -603,8 +599,6 @@ pub async fn raw_configuration_by_node(
     ))
 }
 
-<<<<<<< HEAD
-=======
 /// Get Detailed Information on Node
 ///
 /// # Errors
@@ -736,7 +730,6 @@ pub async fn get_detailed_node_info(
     Ok(result)
 }
 
->>>>>>> 67e5cea (NodeListPage added)
 async fn get_client_by_node(
     client: &HttpBobClient,
     node_name: NodeName,

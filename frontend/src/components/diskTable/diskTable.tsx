@@ -12,6 +12,11 @@ const DotColor: Record<DiskStatusName, string> = {
     Offline: style.reddot,
 };
 
+interface Space {
+    totalSpace: number;
+    usedSpace: number;
+}
+
 const columns: GridColDef[] = [
     {
         field: 'name',
@@ -49,11 +54,11 @@ const columns: GridColDef[] = [
         align: 'center',
         flex: 4,
         headerAlign: 'center',
-        renderCell: (params: GridRenderCellParams<GridValidRowModel, SpaceInfo>) => {
+        renderCell: (params: GridRenderCellParams<GridValidRowModel, Space>) => {
             return (
                 <div>
-                    {formatBytes(params.value?.used_disk || 0)} /{' '}
-                    <span className={style.totalspace}>{formatBytes(params.value?.total_disk || 0)}</span>
+                    {formatBytes(params.value?.usedSpace || 0)} /{' '}
+                    <span className={style.totalspace}>{formatBytes(params.value?.totalSpace || 0)}</span>
                 </div>
             );
         },
@@ -70,16 +75,16 @@ const columns: GridColDef[] = [
 const DiskTable = ({ disks }: { disks: Disk[] }) => {
     const data = disks
         ? disks
-              .map((disk, i) => {
-                  return {
-                      id: i,
-                      name: disk.name,
-                      ops: disk.iops,
-                      status: disk.status,
-                      usedspace: { totalSpace: disk.totalSpace, usedSpace: disk.usedSpace },
-                  } as DiskTableCols;
-              })
-              .sort((a, b) => (a.name < b.name ? 1 : -1))
+            .map((disk, i) => {
+                return {
+                    id: i,
+                    name: disk.name,
+                    ops: disk.iops,
+                    status: disk.status,
+                    usedspace: { totalSpace: disk.totalSpace, usedSpace: disk.usedSpace } as Space,
+                } as DiskTableCols;
+            })
+            .sort((a, b) => (a.name < b.name ? 1 : -1))
         : [];
     return (
         <Box
