@@ -1,5 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import NodePage from '@components/NodePage/NodePage.tsx';
 ---
 
-<Layout title="Welcome to Bob." />
+<Layout title="Bob">
+    <main>
+        <NodePage client:only />
+    </main>
+</Layout>

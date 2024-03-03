@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import React from 'react';
 
-import style from './page.module.css';
+import style from './currentRps.module.css';
 
 const OperationColor: Record<Operation, string> = {
     put: style.reddot,
@@ -36,7 +36,7 @@ const RpsLine = ({ type, rps }: { type: Operation; rps: number }) => {
     );
 };
 
-const CurrentRps = ({ map: rps }: RPS) => {
+const CurrentRps = ({ rps: { map: rps } }: { rps: RPS }) => {
     return (
         <Box
             sx={{

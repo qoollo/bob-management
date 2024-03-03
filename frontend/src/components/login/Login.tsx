@@ -2,6 +2,7 @@ import { removeEmpty } from '@appTypes/common.ts';
 import defaultTheme from '@layouts/DefaultTheme.ts';
 import ThemeRegistry from '@layouts/ThemeRegistry.tsx';
 import { Alert, Box, Button, Grid, Snackbar, TextField } from '@mui/material';
+import { navigate } from 'astro:transitions/client';
 import BobLogo from 'public/logo.svg';
 import React, { type FormEvent, useState } from 'react';
 
@@ -39,7 +40,8 @@ const LoginPage = ({ redirectTo }: { redirectTo: string }) => {
             ),
         });
         if (response.ok) {
-            location.replace(redirectTo);
+            // location.replace(redirectTo);
+            navigate(redirectTo);
         } else {
             setSnackbarMessage('Wrong data');
             setOpenSnackbar(true);

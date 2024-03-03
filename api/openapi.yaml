@@ -215,6 +215,37 @@ paths:
           description: Node Not Found
       security:
       - api_key: []
+  /api/v1/nodes/{node_name}/detailed:
+    get:
+      tags:
+      - services::api
+      summary: Get Detailed Information on Node
+      description: |-
+        Get Detailed Information on Node
+
+        # Errors
+
+        This function will return an error if the server was unable to get node'a client
+        or one of the requests to get information from the node fails
+      operationId: get_detailed_node_info
+      parameters:
+      - name: id
+        in: path
+        description: Node's ID
+        required: true
+      responses:
+        '200':
+          description: Detailed Node information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedNode'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Node Not Found
+      security:
+      - api_key: []
   /api/v1/nodes/{node_name}/metrics:
     get:
       tags:
@@ -334,6 +365,72 @@ components:
       example:
         login: archeoss
         password: '12345'
+    DetailedNode:
+      type: object
+      required:
+      - name
+      - hostname
+      - vdisks
+      - status
+      - metrics
+      - disks
+      properties:
+        disks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Disk'
+        hostname:
+          type: string
+        metrics:
+          $ref: '#/components/schemas/DetailedNodeMetrics'
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/NodeStatus'
+        vdisks:
+          type: array
+          items:
+            $ref: '#/components/schemas/VDisk'
+    DetailedNodeMetrics:
+      type: object
+      required:
+      - rps
+      - alienCount
+      - corruptedCount
+      - space
+      - cpuLoad
+      - totalRam
+      - usedRam
+      - descrAmount
+      properties:
+        alienCount:
+          type: integer
+          format: int64
+          minimum: 0
+        corruptedCount:
+          type: integer
+          format: int64
+          minimum: 0
+        cpuLoad:
+          type: integer
+          format: int64
+          minimum: 0
+        descrAmount:
+          type: integer
+          format: int64
+          minimum: 0
+        rps:
+          $ref: '#/components/schemas/RPS'
+        space:
+          $ref: '#/components/schemas/SpaceInfo'
+        totalRam:
+          type: integer
+          format: int64
+          minimum: 0
+        usedRam:
+          type: integer
+          format: int64
+          minimum: 0
     Disk:
       type: object
       description: Physical disk definition

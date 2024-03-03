@@ -1,5 +1,10 @@
 /* This file is generated and managed by tsync */
 
+interface MetricsEntryModel {
+  value: number;
+  timestamp: number;
+}
+
 /** Physical disk definition */
 interface Disk {
   /** Disk name */
@@ -144,6 +149,26 @@ interface VDisk {
  */
 type VDiskStatus =
   | "Good" | "Bad" | "Offline";
+
+interface DetailedNode {
+  name: string;
+  hostname: string;
+  vdisks: Array<VDisk>;
+  status: NodeStatus;
+  metrics: DetailedNodeMetrics;
+  disks: Array<Disk>;
+}
+
+interface DetailedNodeMetrics {
+  rps: RPS;
+  alienCount: number;
+  corruptedCount: number;
+  space: SpaceInfo;
+  cpuLoad: number;
+  totalRam: number;
+  usedRam: number;
+  descrAmount: number;
+}
 
 /** Types of operations on BOB cluster */
 type Operation =

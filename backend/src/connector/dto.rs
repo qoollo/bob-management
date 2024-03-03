@@ -12,6 +12,7 @@
 //!
 
 use std::collections::HashMap;
+use tsync::tsync;
 #[cfg(all(feature = "swagger", debug_assertions))]
 use utoipa::ToSchema;
 
@@ -365,6 +366,7 @@ impl std::str::FromStr for Error {
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 #[cfg_attr(all(feature = "swagger", debug_assertions), derive(ToSchema))]
+#[tsync]
 pub struct MetricsEntryModel {
     #[serde(rename = "value")]
     pub value: u64,
