@@ -215,8 +215,6 @@ paths:
           description: Node Not Found
       security:
       - api_key: []
-<<<<<<< HEAD
-=======
   /api/v1/nodes/{node_name}/detailed:
     get:
       tags:
@@ -248,7 +246,6 @@ paths:
           description: Node Not Found
       security:
       - api_key: []
->>>>>>> 0178834 (Autogenerate API)
   /api/v1/nodes/{node_name}/metrics:
     get:
       tags:
@@ -1239,4 +1236,3 @@ components:
 tags:
 - name: bob
   description: BOB management API
-
